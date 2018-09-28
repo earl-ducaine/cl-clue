@@ -37,25 +37,16 @@
   (error "~a cannot be top-level because it is not a shell." non-shell))
 
 (defmethod manage-geometry ((parent root) (shell wm-shell) x y width height border-width &key)
-  (declare (type contact          shell)
-	   (type (or null int16)  x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))
-
   (with-slots ((contact-x x)
 	       (contact-y y)
 	       (contact-width width)
 	       (contact-height height)
 	       (contact-border-width border-width)) shell
-
-
     ;; Reconfigure top-level window, if necessary
     (let (changed-p (display (contact-display parent)))
-
       ;; Wait for any previous :configure-notify events to be handled.
       ;; Don't update-state to avoid infinite recursion during realization.
       (process-all-events display nil)
-
       (with-state (shell)
 	(when (and x (/= x contact-x)
 		   (setf (drawable-x shell) x))
@@ -72,13 +63,11 @@
 	(when (and border-width (/= border-width contact-border-width)
 		   (setf (drawable-border-width shell) border-width))
 	  (setf changed-p t)))
-
       ;; Return approved geometry
       (values
 	(or
 	  ;; Null changed approved immediately
 	  (not changed-p)
-
 	  ;; Actual change approved if it is not modified by window mgr.
 	  (progn
 	    ;; Wait for :configure-notify to report actual new window geometry.
@@ -88,7 +77,6 @@
 	      (catch :configure-notify
 		;; Don't update-state to avoid infinite recursion during realization.
 		(loop (process-next-event display nil nil))))
-
 	    ;; Assert: shell slots now contain actual (wm-approved) geometry
 	    ;; Return approval of original geometry request
 	    (and
@@ -97,9 +85,7 @@
 	      (not (and width (/= width contact-width)))
 	      (not (and height (/= height contact-height)))
 	      (not (and border-width (/= border-width contact-border-width))))))
-
 	contact-x contact-y contact-width contact-height contact-border-width))))
-
 
 (defmethod manage-geometry :around ((parent root) (shell override-shell) x y width height border-width &key)
   ;; Approve and perform change immediately. We could let
@@ -126,24 +112,16 @@
 	(resize shell approved-width approved-height approved-border-width))
       (values t approved-x approved-y approved-width approved-height approved-border-width))))
 
-
 (defmethod manage-priority ((parent root) (shell wm-shell) priority sibling &key)
-  (declare (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
-
-  ;; Shrug..just return approval, because ICCCM doesn't require the window manager
-  ;; to report the result of an attempt to change priority. Besides, even if we did get
-  ;; a :configure-notify saying what really happened, we can't always tell
-  ;; if the request was successful or not. That's because only an above-sibling comes back in the
-  ;; :configure-notify, and we may not own this window or know its place in the hierarchy.
-
+  ;; Shrug..just return approval, because ICCCM doesn't require the
+  ;; window manager to report the result of an attempt to change
+  ;; priority. Besides, even if we did get a :configure-notify saying
+  ;; what really happened, we can't always tell if the request was
+  ;; successful or not. That's because only an above-sibling comes
+  ;; back in the :configure-notify, and we may not own this window or
+  ;; know its place in the hierarchy.
   (values t priority sibling))
 
-
-
-
+;; Adding/deleting root children has no effect on sibling layout
 (defmethod change-layout ((parent root) &optional newly-managed)
-  (declare (ignore newly-managed))
-  ;; Adding/deleting root children has no effect on sibling layout
-  )
+  (declare (ignore newly-managed)))

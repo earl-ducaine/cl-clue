@@ -71,7 +71,7 @@
   (with-slots ((contact-x x) (contact-y y)) contact
     (setf contact-x x)
     (setf contact-y y)))
-  
+
 (defmethod resize ((contact virtual) width height border-width)
   (with-slots ((contact-width width)
 	       (contact-height height)
@@ -129,7 +129,7 @@
       (setf composite-event-mask (logior event-mask composite-event-mask)))))
 
 (defmethod handle-event ((contact virtual-composite) (event event))
-  ;; Do event/callback translation based on the event-translations slot  
+  ;; Do event/callback translation based on the event-translations slot
   (labels ((event-child (event)
 	     (let ((x (slot-value (the event event) 'x))
 		   (y (slot-value (the event event) 'y)))
@@ -137,7 +137,6 @@
 		 (when (and (typep child 'virtual)
 			    (inside-contact-p child x y))
 		   (return child))))))
-    
     (block exit
       (let ((event-key (slot-value (the event event) 'key))
 	    (event-sequence (slot-value (the event event) 'sequence)))
@@ -163,7 +162,6 @@
 			 event-y (- event-y child-y))
 		   (cluei::dispatch-event event event-key t event-sequence child)
 		   (return-from exit nil))))))
-	  
 	  ;; fabricate mouse enter/leave for virtual children
 	  (:motion-notify
 	   (let ((child (event-child event)))
@@ -206,7 +204,6 @@
 		       (when handled-p (return-from exit nil))
 		       (setf event-x x
 			     event-y y))))))))
-
 	  ;; When mouse leaves composite, fabricate leave-notify for virtual children
 	  (:leave-notify
 	   (let ((mouse-contact (mouse-contact contact)))
@@ -223,7 +220,6 @@
 		   (cluei::dispatch-event event :leave-notify t event-sequence mouse-contact)
 		   (setf (mouse-contact contact) nil)
 		   (return-from exit nil))))))
-
 	  (:exposure
 	   (with-slots ((event-x x) (event-y y)
 			(event-height height)

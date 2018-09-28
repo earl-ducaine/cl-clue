@@ -112,11 +112,6 @@
   (:documentation "CLUE event structure, one slot for every event value.  No methods."))
 
 (defmethod print-object ((instance event) stream)
-  #+lispm
-  (si:printing-random-object (instance stream)
-    (with-slots (key contact) instance
-      (format stream "Event ~a for ~a" key (and (typep contact 'contact) (contact-name contact)))))
-  #-lispm
   (progn
     (write-string "#<EVENT " stream)
     (with-slots (key contact) instance
@@ -134,81 +129,6 @@
 ;;; the event would be destructively modified on subsequent events.
 (defvar *event-cache* nil)
 
-#+ explorer
-(let ((nil-event (make-instance 'event)))
-  (declare (type event nil-event))
-  (with-slots
-    (
-     above-sibling atom border-width character child
-     code colormap configure-p contact count data display drawable event-window focus-p
-     format height hint-p installed-p key keymap keysym kind major minor mode name
-     new-p override-redirect-p parent place plist property requestor root root-x root-y
-     same-screen-p selection send-event-p sequence state target time type width
-     window x y
-     )
-    (the event nil-event)
-    (setf
-      above-sibling            nil
-      atom                     nil
-      border-width             nil
-      character                nil
-      child                    nil
-      code                     nil
-      colormap                 nil
-      configure-p              nil
-      contact                  nil
-      count                    nil
-      data                     nil
-      display                  nil
-      drawable                 nil
-      event-window             nil
-      focus-p                  nil
-      format                   nil
-      height                   nil
-      hint-p                   nil
-      installed-p              nil
-      key                      nil
-      keymap                   nil
-      keysym                   nil
-      kind                     nil
-      major                    nil
-      minor                    nil
-      mode                     nil
-      name                     nil
-      new-p                    nil
-      override-redirect-p      nil
-      parent                   nil
-      place                    nil
-      plist                    nil
-      property                 nil
-      requestor                nil
-      root                     nil
-      root-x                   nil
-      root-y                   nil
-      same-screen-p            nil
-      selection                nil
-      send-event-p             nil
-      sequence                 nil
-      state                    nil
-      target                   nil
-      time                     nil
-      type                     nil
-      width                    nil
-      window                   nil
-      x                        nil
-      y                        nil
-      ))
-
-  (defun allocate-event ()
-    (let ((event (or (pop *event-cache*)
-		     (make-instance 'event))))
-      (si:%blt-typed
-	(1+ (si:%pointer nil-event))
-	(1+ (si:%pointer event))
-	49 1)
-      event)))
-
-#- explorer
 (defun allocate-event ()
   ;; Get an event structure, initializing all slots to NIL
   (let ((event (or (pop *event-cache*)
@@ -220,7 +140,7 @@
 		     above-sibling place atom selection requestor target property
 		     colormap new-p installed-p format type data name send-event-p
 		     )
-		(the event event)
+	event
       (setf key	nil
 	    display nil				; Display event was reported to
 	    contact nil				; Contact the event is directed to
@@ -277,7 +197,6 @@
   ;; Return an event to the cache, where it can be re-used.
   (push event *event-cache*))
 
-
 ;;-----------------------------------------------------------------------------
 ;; MODES
 
@@ -419,7 +338,7 @@ other previously-defined instance or class translations for CONTACT."
 	(slot             (gensym)))
 
   `(let* ((,new-translations (list ,@translations))
-	  (,slot             (slot-value (the contact ,contact) 'event-translations))
+	  (,slot             (slot-value ,contact 'event-translations))
 	  (,previous-translations
 	   ;; Save any actions from previous instance translations for these event specs
 	   (let (,previous-translations)
@@ -483,12 +402,11 @@ other previously-defined instance or class translations for CONTACT."
 
 (defmacro with-event (slots &body body)
   "Used within an action method to access event slots."
-
   `(using-event
      (assert
        (boundp '$event$) nil
-       "WITH-EVENT used outside the dynamic extent of PROCESS-NEXT-EVENT.")
-     (with-slots ,slots (the event $event$) ,@body)))
+       "with-event used outside the dynamic extent of process-next-event.")
+     (with-slots ,slots $event$ ,@body)))
 
 (defmacro call-action (action &rest args)
   "Used within DEFACTION to call another action. THIS MACRO IS NOW OBSOLETE. Replace
@@ -498,8 +416,6 @@ with a direct reference to the ACTION function."
     (error "CALL-ACTION used outside DEFACTION."))
   `(,action ,$contact$ ,@args))
 
-
-(proclaim '(inline call-action-internal))
 (defun call-action-internal (contact action)
   (if (consp action)
       (apply (car action) contact (cdr action))
@@ -576,7 +492,7 @@ with a direct reference to the ACTION function."
 			     keysym kind major minor mode name new-p override-redirect-p parent place
 			     plist property requestor selection send-event-p state target type width
 			     window x y))
-	  (when (and (setf value (slot-value (the event $event$) slot-name))
+	  (when (and (setf value (slot-value $event$ slot-name))
 		     (not (eq value event-contact)))
 	    (when (typep value 'contact) (setf value (contact-name value)))
 	    (setf result (nconc result (list slot-name value)))))
@@ -592,7 +508,7 @@ with a direct reference to the ACTION function."
 			   count drawable event-window focus-p format height hint-p installed-p keymap keysym
 			   kind major minor mode name new-p override-redirect-p parent place plist
 			   property requestor selection send-event-p state target type width window x y))
-	(let ((value (slot-value (the event $event$) slot-name)))
+	(let ((value (slot-value $event$ slot-name)))
 	  (when value
 	    (when (typep value 'contact) (setf value (contact-name value)))
 	    (format *trace-output* "~%~5t~20s~20s" slot-name value))))
@@ -656,26 +572,20 @@ with a direct reference to the ACTION function."
        ;; Flush cached class event mask, event precedence list
        (class-name-event-mask ',class)
        nil
-
        (class-name-event-precedence-list ',class)
        nil))
 
 
-
 (defmethod event-actions ((contact basic-contact) event-spec)
   "Return the list of actions for EVENT-SPEC."
-  (declare (values action-list))
-
   ;; Check instance translations
   (let ((event-binding (car (parse-event-translation event-spec nil))))
-
     (cdr
       (or
 	;; Instance translation?
 	(assoc event-binding
-	       (slot-value (the basic-contact contact) 'event-translations)
+	       (slot-value contact 'event-translations)
 	       :test #'equal)
-
 	;; Class translation?
 	(dolist (class (class-name-event-precedence-list (class-name-of contact)))
 	  (let ((actions (assoc event-binding
@@ -684,13 +594,12 @@ with a direct reference to the ACTION function."
 	    (when actions
 	      (return actions))))))))
 
-
 (defmethod add-event ((contact basic-contact) event-spec &rest actions)
   "Add EVENT-SPEC and ACTIONS to the event translations for CONTACT."
 
   ;; Compute canonical event translation.
   (let ((translation  (parse-event-translation event-spec (copy-list actions))))
-    (with-slots (event-mask event-translations) (the contact contact)
+    (with-slots (event-mask event-translations) contact
 
       ;; Translation for this event spec already exists?
       (let ((previous (assoc (first translation) event-translations :test #'equal)))
@@ -713,7 +622,7 @@ with a direct reference to the ACTION function."
 
     ;; Compute a canonical event translation for the event spec
   (let ((translation (parse-event-translation event-spec nil)))
-    (with-slots (event-mask event-translations) (the contact contact)
+    (with-slots (event-mask event-translations) contact
 
       ;; Remove any matching translation.
       (setf event-translations
@@ -760,8 +669,7 @@ with a direct reference to the ACTION function."
 (defun get-display-modifier-translate (display &optional update-p)
   ;; Returns a table that translates meta-modifier bits
   ;; into mod1/mod2/mod3/mod4/mod5 modifier state bits.
-  (declare (type display display)
-	   (type boolean update-p))
+  (declare (type display display))
   (or (and (not update-p) (display-modifier-translate display))
       (let* ((mapping (xlib::get-display-modifier-mapping display))
 	     (mod-length (length *meta-modifier-alist*))
@@ -788,7 +696,6 @@ with a direct reference to the ACTION function."
 	    (setf (aref translate i) mask)))
 	(setf (display-modifier-translate display) translate))))
 
-(proclaim '(inline translate-meta-modifiers))
 (defun translate-meta-modifiers (state translate)
   ;; Translate the meta/super/hyper modifiers in state to mod-1/mod-2/mod3/mod4/mod5 modifiers.
   ;; TRANSLATE is the result from GET-DISPLAY-MODIFIER-TRANSLATE
@@ -797,8 +704,7 @@ with a direct reference to the ACTION function."
 
 (defun encode-clue-modifier-mask (modifiers)
   ;; Make a state-mask from modifiers
-  (declare (type (or mask16 state-mask-key (member :meta :super :hyper) list) modifiers)
-	   (values mask16))
+  (declare (type (or mask16 state-mask-key (member :meta :super :hyper) list) modifiers))
   (typecase modifiers
     (fixnum (ldb (byte meta-shift 0) modifiers))
     (cons (let ((mask 0))
@@ -806,12 +712,11 @@ with a direct reference to the ACTION function."
 	      (setf mask (logior mask (encode-clue-modifier-mask modifier))))
 	    mask))
     (otherwise
-     (let ((temp (position modifiers (the list *meta-modifier-alist*) :key #'car :test #'eq)))
+     (let ((temp (position modifiers *meta-modifier-alist* :key #'car :test #'eq)))
        (if temp
 	   (ash 1 (+ temp meta-shift))
 	 (make-state-mask modifiers))))))
 
-(proclaim '(inline event-spec-match))
 (defun event-spec-match (display state select event-state)
   (let ((translate (get-display-modifier-translate display)))
     (setq state (translate-meta-modifiers state translate)
@@ -879,7 +784,7 @@ with a direct reference to the ACTION function."
 
 (defun key-match (event spec-code spec-state spec-select)
   ;; Returns T if EVENT-SPEC matches EVENT
-  (with-slots (display character state keysym) (the event event)
+  (with-slots (display character state keysym) event
     (and (event-spec-match display spec-state spec-select state)
 	 (cond
 	   ((characterp spec-code) (eql spec-code character))
@@ -939,7 +844,7 @@ with a direct reference to the ACTION function."
   (with-slots ((event-code code)
 	       (event-state state)
 	       display key plist time x y)
-	      (the event event)
+      event
     (let* ((code event-code)
 	   (mask (ash 1 (+ code button-0-shift))))
       (and
@@ -958,7 +863,7 @@ with a direct reference to the ACTION function."
   (with-slots ((event-code code)
 	       (event-state state)
 	       key display plist time x y)
-	      (the event event)
+      event
     (let* ((code event-code)
 	   (mask (ash 1 (+ code button-0-shift))))
       (and
@@ -992,9 +897,9 @@ with a direct reference to the ACTION function."
     (list 'motion-match modifiers mask)))
 
 (defun motion-match (event state select)
-  (with-slots (display) (the event event)
+  (with-slots (display) event
     (or (eq state :any)
-	(event-spec-match display state select (slot-value (the event event) 'state)))))
+	(event-spec-match display state select (slot-value event 'state)))))
 
 (defun motion-event-mask (state select)
   (if (= all-button-mask (logand (logior state select) all-button-mask))
@@ -1004,7 +909,9 @@ with a direct reference to the ACTION function."
 	  (setq mask #.(make-event-mask :pointer-motion)))
 	mask)))
 
-(eval-when (compile) ;; motion-event-mask makes the following assumption:
+;;(eval-when (compile)
+;; motion-event-mask makes the following assumption:
+(eval-when (:compile-toplevel)
   (assert (and (= (make-event-mask :button-1-motion) (make-state-mask :button-1))
 	       (= (make-event-mask :button-2-motion) (make-state-mask :button-2))
 	       (= (make-event-mask :button-3-motion) (make-state-mask :button-3))
@@ -1019,7 +926,7 @@ with a direct reference to the ACTION function."
   (list 'enter-leave-match kinds))
 
 (defun enter-leave-match (event kinds)
-  (member (slot-value (the event event) 'kind) kinds :test #'eq))
+  (member (slot-value event 'kind) kinds :test #'eq))
 
 (setf (check-function :key-press) 'key-check)
 (setf (check-function :key-release) 'key-check)
@@ -1085,7 +992,7 @@ with a direct reference to the ACTION function."
     :timer))
 
 (defun timer-match (event timer-name)
-  (with-slots (name) (the event event)
+  (with-slots (name) event
     (eq timer-name name)))
 
 (setf (check-function :timer) #'timer-check)
@@ -1102,24 +1009,23 @@ with a direct reference to the ACTION function."
 	      (cons state nil))))))
 
 (defun property-match (event &optional property state)
-  (with-slots ((event-property atom) (event-state state)) (the event event)
+  (with-slots ((event-property atom) (event-state state)) event
     (or (not property)
 	(and (eq property event-property)
 	     (or (not state) (eq state event-state))))))
 
 (setf (check-function :property-notify) 'property-check)
 
-;;;-----------------------------------------------------------------------------
-;;; DOUBLE-CLICK events
+
+;;; Double-click events
 
 (defun click-lookahead (display count max first-time state first-x first-y)
-  (declare (type card8 count)) ;; even when the button is UP, odd when DOWN
-
+  ;; Even when the button is UP, odd when DOWN
+  (declare (type card8 count))
   (let* ((multipress-verify-p (display-multipress-verify-p display))
 	 (multipress-delay-limit (display-multipress-delay-limit display))
 	 (timeout (/  multipress-delay-limit 1000.0))
 	 (distance-limit 5))
-
     (flet ((get-result (count timeoutp)
 		       ;; If the result from GET-RESULT is NIL, all lookahead events
 		       ;; remain on the event queue, otherwise the events are removed,
@@ -1143,11 +1049,9 @@ with a direct reference to the ACTION function."
 		  (setq timeout-p nil)
 		  (when (> (+ (abs (- x first-x)) (abs (- y first-y))) distance-limit)
 		    (return-from result (get-result count nil))))
-
 		 ((enter-notify leave-notify) ()	; Fail when pointer moves to a new window
 		  (setq timeout-p nil)
 		  (return-from result (get-result count nil)))
-
 		 (button-press (time (state event-state) code)
 			       (setq timeout-p nil)
 			       (cond ((>= count max) (return-from result :count))
@@ -1164,7 +1068,6 @@ with a direct reference to the ACTION function."
 						  (return-from result result)
 						  nil ;; else fall-through returning NIL
 						  ))))))
-
 		 (button-release (time (state event-state))
 				 (setq timeout-p nil)
 				 (cond ((>= count max) (return-from result :count))
@@ -1181,19 +1084,15 @@ with a direct reference to the ACTION function."
 						    (return-from result result)
 						    nil ;; else fall-through returning NIL
 						    ))))))))))
-
 	  (if timeout-p
 	      ;; event-case timed out
 	      (if (or (zerop timeout)
 		      (not multipress-verify-p))
-
 		  (return (get-result count :local-timeout))
-
 		  (progn
 		    ;; Verify timeout with a server round-trip and event-queue recheck
 		    (display-finish-output display)
 		    (setq timeout 0)))
-
 	      ;; Else exit loop with result
 	      (return (case result
 			(:timeout  (get-result (1- count) :timeout))
@@ -1201,58 +1100,40 @@ with a direct reference to the ACTION function."
 			((nil)     0)
 			(otherwise result)))))))))
 
-
-
-;;;-----------------------------------------------------------------------------
-;;; EVENT-PROCESSING
+;;; Event-processing
 
 (defun process-all-events (display &optional (update-state-p t))
   "Repeatedly flush output and process resulting events until event queue is empty."
   (loop
     ;; Flush output buffer and wait for resulting events
     (display-finish-output display)
-
     ;; Any events left to process?
     (if (event-listen display 0)
-
 	;; Yes, process remaining event queue
 	(loop
 	  (unless (process-next-event display 0 update-state-p) (return)))
-
 	;; No
 	(return))))
 
-
 (defun process-next-event (display &optional timeout (update-state-p t))
   "Process one event. Call UPDATE-STATE iff UPDATE-STATE-P is true. "
-  (declare (type display display)
-	   (type (or null number) timeout)
-	   (type boolean update-state-p)
-	   (values boolean))
-
   ;; Ensure consistent contact states
-  (when update-state-p (update-state display))
-
+  (when update-state-p
+    (update-state display))
   (let*
     (;; Process any timers that have expired
      (interval-until-next-timer  (execute-timers display))
-
      ;; Compute true timeout
      (wait-for-timer-p           (when (or (null timeout)
 					   (and interval-until-next-timer
 						(< interval-until-next-timer timeout)))
 				   interval-until-next-timer))
-
      (event                      (allocate-event))
      (result                     nil))
-
-    (declare (type event event))
-
-    (setf (slot-value (the event event) 'display) display)
-
+    (setf (slot-value event 'display) display)
     (macrolet ((set-event (&rest parameters)
 		 `(progn ,@(mapcar #'(lambda (parm)
-				       `(setf (slot-value (the event event) ',parm) ,parm))
+				       `(setf (slot-value event ',parm) ,parm))
 				   parameters)))
 	       (dispatch (contact)
 		  `(progn
@@ -1271,230 +1152,174 @@ with a direct reference to the ACTION function."
 	     (set-event code time root window child root-x root-y x y
 			state same-screen-p)
 	     (dispatch window))
-
 	    (:motion-notify
 	      (hint-p time root window child root-x root-y x y
 		      state same-screen-p event-key sequence send-event-p) t
 	      (set-event hint-p time root window child root-x root-y x y
 			 state same-screen-p)
 	      (dispatch window))
-
 	    ((:enter-notify :leave-notify)
 	     (kind time root window child root-x root-y x y
 		   state mode focus-p same-screen-p event-key sequence send-event-p) t
 	     (set-event kind time root window child root-x root-y x y
 			state mode focus-p same-screen-p)
 	     (dispatch window))
-
 	    ((:focus-in :focus-out)
 	     (kind window mode event-key sequence send-event-p) t
 	     (set-event kind window mode)
 	     (dispatch window))
-
 	    (:exposure
 	      (window x y width height count event-key sequence send-event-p) t
 	      (set-event window x y width height count)
 	      (dispatch window))
-
 	    (:graphics-exposure
 	      (drawable x y width height count major minor event-key sequence send-event-p) t
 	      (set-event drawable x y width height count major minor)
 	      (dispatch drawable))
-
 	    (:no-exposure
 	      (drawable major minor event-key sequence send-event-p) t
 	      (set-event drawable major minor)
 	      (dispatch drawable))
-
 	    (:visibility-notify
 	      (window state event-key sequence send-event-p) t
 	      (set-event window state)
 	      (dispatch window))
-
 	    (:create-notify
 	      (parent window x y width height border-width
 		      override-redirect-p event-key sequence send-event-p) t
 	      (set-event parent window x y width height border-width
 			 override-redirect-p)
 	      (dispatch parent))
-
 	    (:destroy-notify
 	      (event-window window event-key sequence send-event-p) t
 	      (set-event event-window window)
 	      (dispatch event-window))
-
 	    (:unmap-notify
 	      (event-window window configure-p event-key sequence send-event-p) t
 	      (set-event event-window window configure-p)
 	      (dispatch event-window))
-
 	    (:map-notify
 	      (event-window window override-redirect-p event-key sequence send-event-p) t
 	      (set-event event-window window override-redirect-p)
 	      (dispatch event-window))
-
 	    (:map-request
 	      (parent window event-key sequence send-event-p) t
 	      (set-event parent window)
 	      (dispatch parent))
-
 	    (:reparent-notify
 	      (event-window window parent x y override-redirect-p event-key sequence send-event-p) t
 	      (set-event event-window window parent x y override-redirect-p)
 	      (dispatch event-window))
-
 	    (:configure-notify
 	      (event-window window above-sibling x y width height border-width
 			    override-redirect-p event-key sequence send-event-p) t
 	      (set-event event-window window above-sibling x y width height
 			 border-width override-redirect-p)
 	      (dispatch event-window))
-
 	    (:configure-request
 	      (parent window above-sibling x y width height border-width event-key sequence send-event-p) t
 	      (set-event parent window above-sibling x y width height border-width)
 	      (dispatch parent))
-
 	    (:gravity-notify
 	      (event-window window x y event-key sequence send-event-p) t
 	      (set-event event-window window x y)
 	      (dispatch event-window))
-
 	    (:resize-request
 	      (window width height event-key sequence send-event-p) t
 	      (set-event window width height)
 	      (dispatch window))
-
 	    (:circulate-notify
 	      (event-window window parent place event-key sequence send-event-p) t
 	      (set-event event-window window parent place)
 	      (dispatch event-window))
-
 	    (:circulate-request
 	      (parent window place event-key sequence send-event-p) t
 	      (set-event parent window place)
 	      (dispatch parent))
-
 	    (:property-notify
 	      (window atom time state event-key sequence send-event-p) t
 	      (set-event window atom time state)
 	      (dispatch window))
-
 	    (:selection-clear
 	      (time window selection event-key sequence send-event-p) t
 	      (set-event time window selection)
 	      (dispatch window))
-
 	    (:selection-request
 	      (time window requestor selection target property event-key sequence send-event-p) t
 	      (set-event time window requestor selection target property)
 	      (dispatch window))
-
 	    (:selection-notify
 	      (time window selection target property event-key sequence send-event-p) t
 	      (set-event time window selection target property)
 	      (dispatch window))
-
 	    (:colormap-notify
 	      (window colormap new-p installed-p event-key sequence send-event-p) t
 	      (set-event window colormap new-p installed-p)
 	      (dispatch window))
-
 	    (:client-message
 	      (format window type data event-key sequence send-event-p) t
 	      (set-event format window type data)
 	      (dispatch window))
-
 	    (:keymap-notify			; Special case
 	      (keymap event-key send-event-p) t
 	      (set-event keymap)		; keymap-notify doesn't have an associated window.
 	      (let ((sequence 0))
 		(dispatch (display-root display))))	; Send keymap-notify events to the root.
-
 	    (:mapping-notify			; Special case
 	      (request start count) t
 	      (mapping-notify display request start count)
 	      (when (eq request :modifier)	; Update the modifier mapping translate table
 		(get-display-modifier-translate display :update))
 	      t))
-
 	  ;; No event read -- return true (i.e. no timeout) if we now have a timer ready
 	  (when wait-for-timer-p t))))
-
     ;; We could add an unwind protect to ensure that the event is always
     ;; deallocated (process-next-event is sometimes thrown out of).
     ;; However, we judge that an unwind-protect all the time is more
     ;; expensive than garbage collecting an event structure some of the
     ;; time.
     (deallocate-event event)
-
     result))
-
 
 
 (defun dispatch-event (event event-key send-event-p sequence contact)
   ;; Called from PROCESS-NEXT-EVENT to filter events and call event handlers.
-  (declare (type event   event)
-	   (type keyword event-key)
-	   (type boolean send-event-p)
-	   (type card16  sequence)
-	   (type contact contact))
-  (declare (optimize speed (safety 0) (space 0)))
-  (declare (inline sensitive-p))
-
   (with-slots ((event_key key)
 	       (event-sequence sequence)
 	       (event-send-event-p send-event-p)
-	       (event-contact contact)) (the event event)
+	       (event-contact contact)) event
     (setf event_key event-key
 	  event-send-event-p send-event-p
 	  event-sequence sequence
 	  event-contact contact))
-
   (let ((class (class-name-of contact)))
-    ;;
     ;; Check for non-contact event drawables.
-    ;;
     (if (or (eq class 'window) (eq class 'pixmap))
-
 	(handle-event (display-root (drawable-display contact)) event)
-
 	(if (destroyed-p contact)
-
 	    ;; Destroyed-contact!
 	    (when (eq event-key :destroy-notify)
 	      (destroy-finish contact))
-
 	    ;; Bind event for reference within with-event forms
 	    (let ((display (slot-value contact 'display))
 		  ($event$ event))
 	      (declare (special $event$))
-
-	      ;;
 	      ;; Do key translation
-	      ;;
 	      (when (or (eq event-key :key-press)
 			(eq event-key :key-release))
-		(with-slots (keysym character code state) (the event event)
+		(with-slots (keysym character code state) event
 		  (let ((keysym-index (default-keysym-index display code state)))
 		    (setf keysym (keycode->keysym display code keysym-index)
 			  character (keycode->character display code state :keysym-index keysym-index)))))
-	      ;;
 	      ;; Call the before event handlers
-	      ;;
 	      (dolist (before-action (before-actions display))
 		(when (subtypep class (first before-action))
 		  (call-action-internal contact (rest before-action))))
-	      ;;
 	      ;; Handle insensitive contacts
-	      ;;
 	      (when (and (member event-key *sensitive-events* :test #'EQ)
 			 (not (sensitive-p contact)))
 		(return-from dispatch-event nil))
-
-	      ;;
 	      ;; Handle modes
-	      ;;
 	      (let ((modes (display-mode-stack display)))
 		(when (and modes (not (contact-mode contact)))
 		  (when
@@ -1511,14 +1336,10 @@ with a direct reference to the ACTION function."
 			(call-action-internal (first mode) (cddr mode))
 			;; quit
 			(return-from dispatch-event nil))))))
-
-	      ;;
 	      ;; Handle event compression
-	      ;;
 	      (with-slots ((contact-compress-motion compress-motion)
 			   (contact-compress-exposures compress-exposures))
-			  (the contact contact)
-
+		  contact
 		(case event-key
 		  (:exposure			; Check for exposure compression
 		   (when (and (eq contact-compress-exposures :on)
@@ -1529,7 +1350,6 @@ with a direct reference to the ACTION function."
 			    (exposed-max-x (+ exposed-min-x (slot-value event 'width)))
 			    (exposed-max-y (+ exposed-min-y (slot-value event 'height)))
 			    (compressed    0))
-
 		       (event-case (display :force-output-p nil :discard-p t)
 			 ;; Assert: We can discard all events up to 0-count :exposure
 			 ;; because the protocol says that no non-exposure events can intervene.
@@ -1540,13 +1360,11 @@ with a direct reference to the ACTION function."
 					  exposed-max-y (max (+ y height) exposed-max-y))
 				    (incf compressed)
 				    (zerop count)))
-
 		       (setf (slot-value event 'x)      exposed-min-x
 			     (slot-value event 'y)      exposed-min-y
 			     (slot-value event 'width)  (- exposed-max-x exposed-min-x)
 			     (slot-value event 'height) (- exposed-max-y exposed-min-y)
 			     (slot-value event 'count)  0)
-
 		       ;; Ensure all of exposed region reported has been cleared.
 		       (when (> compressed 1)
 			 (clear-area
@@ -1555,17 +1373,14 @@ with a direct reference to the ACTION function."
 			   :y      (slot-value event 'y)
 			   :width  (slot-value event 'width)
 			   :height (slot-value event 'height))))))
-
 		  (:motion-notify		; Check for motion compression
 		   (when (eq contact-compress-motion :on)
 		     (let ((count 0))
-
 		       ;; Count consecutive :motion-notify's currently in queue
 		       (event-case (display :force-output-p nil :peek-p t :timeout 0)
 			 (:motion-notify (window)
 					 (not (and (eq window contact) (incf count))))
 			 (otherwise ()   t))
-
 		       (when (plusp count)
 			 ;; Remove all but last and quit immediately
 			 (do () ((zerop (decf count)))
@@ -1579,13 +1394,9 @@ with a direct reference to the ACTION function."
 
 (defmethod handle-event ((contact basic-contact) (event event))
   "Do event/callback translation based on the event-translations slot."
-  (declare (type contact contact)
-	   (type event event))
-  ;;
   ;; Handle universal events
-  ;;
-  (when (eq :exposure (slot-value (the event event) 'key))
-    (with-slots (x y width height) (the event event)
+  (when (eq :exposure (slot-value event 'key))
+    (with-slots (x y width height) event
       (display contact x y width height)))
 
 ;; The following "universal event" is obsolete -- use shells for top-level windows
@@ -1603,7 +1414,7 @@ with a direct reference to the ACTION function."
 ;     ;; root should be used instead, waiting for the configure-notify,
 ;     ;; and returning an appropriate successs-p parameter.
 ;     ;;
-;     (with-slots (x y width height border-width window) (the event event)
+;     (with-slots (x y width height border-width window) event
 ;       (when (and (eq window contact) (top-level-p contact))
 ;	 (without-requests contact
 ;	   (move contact x y)
@@ -1634,11 +1445,11 @@ with a direct reference to the ACTION function."
 			      (apply (cadr event-spec) event (cddr event-spec))))
 		   (return event-binding))))))
 
-    (let ((key (slot-value (the event event) 'key)))
+    (let ((key (slot-value event 'key)))
       (cdr
 	(or
 	  ;; Instance translations
-	  (find-translation event key (slot-value (the basic-contact contact) 'event-translations))
+	  (find-translation event key (slot-value contact 'event-translations))
 
 	  ;; Class translations
 	  (dolist (class (class-name-event-precedence-list (class-name-of contact)))
@@ -1655,14 +1466,14 @@ with a direct reference to the ACTION function."
       (dolist (sibling siblings)
 	(unless (eq sibling contact)
 	  (when (setq actions (translate-event sibling event))
-	    (setf (slot-value (the event event) 'contact) sibling)
+	    (setf (slot-value event 'contact) sibling)
 	    (dolist (action actions t)
 	      (call-action-internal sibling action))
 	    (return t))))
       ;; If not handled by a sibling of contact, check the parent
       (when (and parent
 		 (setq actions (translate-key parent event)))
-	(setf (slot-value (the event event) 'contact) parent)
+	(setf (slot-value event 'contact) parent)
 	(dolist (action actions t)
 	  (call-action-internal parent action)))
       ;; Not handled by parent, recurse up to the parent
@@ -1761,15 +1572,14 @@ with a direct reference to the ACTION function."
       ;; Dispatch a :timer event
       (let ((event (allocate-event)))
 	(with-slots ((event-display display)
-		     name data) (the event event)
+		     name data) event
 	  (setf event-display display
 		name (timer-name next-timer)
 		data (timer-data next-timer)))
 	(dispatch-event event :timer nil 0 (timer-contact next-timer))
 	(deallocate-event event)))))
 
-
-;;;-----------------------------------------------------------------------------
+
 ;;; Utility functions
 
 (defun describe-event-translations (contact &optional (stream *standard-output*))
@@ -1780,14 +1590,11 @@ print the event translations for that contact class."
 	   (dolist (action (cdr event))
 	     (write-char #\space stream)
 	     (prin1 action stream))))
-
     (let ((translations (when (typep contact 'basic-contact)
-			  (slot-value (the basic-contact contact) 'event-translations))))
-
+			  (slot-value contact 'event-translations))))
       ;; Print instance event translations for the contact
       (dolist (event translations)
 	(print-event contact event stream))
-
       ;; Print event-translations for the contact's superclasses
       (dolist (class (class-name-event-precedence-list
 		       (if (symbolp contact) contact (class-name-of contact))))

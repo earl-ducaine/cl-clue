@@ -1,49 +1,42 @@
 ;;; -*- Mode:Lisp; Package:USER; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 
-;;;                          TEXAS INSTRUMENTS INCORPORATED                          |
-;;;                                   P.O. BOX 149149                                |
-;;;                                AUSTIN, TEXAS 78714-9149                          |
-;;;                                                                                  |
-;;;                Copyright (C) 1989,1990 Texas Instruments Incorporated            |
-;;;                                                                                  |
-;;; Permission is granted to any individual or institution to use, copy, modify, and |
-;;; distribute this software, provided that  this complete copyright and  permission |
-;;; notice is maintained, intact, in all copies and supporting documentation.        |
-;;;                                                                                  |
-;;; Texas Instruments Incorporated provides this software "as is" without express or |
-;;; implied warranty.                                                                |
-
+;;;                          TEXAS INSTRUMENTS INCORPORATED
+;;;                                   P.O. BOX 149149
+;;;                                AUSTIN, TEXAS 78714-9149
+;;;
+;;;                Copyright (C) 1989,1990 Texas Instruments Incorporated
+;;;
+;;; Permission is granted to any individual or institution to use, copy, modify, and
+;;; distribute this software, provided that  this complete copyright and  permission
+;;; notice is maintained, intact, in all copies and supporting documentation.
+;;;
+;;; Texas Instruments Incorporated provides this software "as is" without express or
+;;; implied warranty.
+;;;
 ;;; Source code for clue examples described in Explorer X Window
 ;;; System Programmer's Reference Manual.
 
 
 (in-package :clue-example)
 
-(defcontact menu (override-shell)
-  ()
-  (:resources
-    (font :type font)
-    (foreground :type pixel)
-    (title :type string)
-    (state :initform :withdrawn))
-  (:documentation
-    "Presents a column of menu items."))
 
 (defmethod initialize-instance :after ((menu menu) &key title font foreground background &allow-other-keys)
   ;; Create title-frame containing choices child to manage menu items
   (let* ((title   (make-contact
 		   'title-frame
 		   :parent     menu
-		   :name       :title
-		   :text       title
-		   :font       font
+		   :name :title
+		   :text title
+		   :font font
 		   :foreground foreground
 		   :background (or background :white)))
          (manager (make-contact
 		   'choices
-		   :parent       title
-		   :name         :manager
-		   :border-width 0)))
+		   :parent title
+		   :name :manager
+		   :border-width 0
+		   :width 0
+		   :height 0)))
     ;; Define callback to handle effect of selection
     (add-callback manager :select 'popup-menu-select menu)
     ;; Moving pointer off menu causes nil selection
@@ -82,25 +75,24 @@
   ;; Complete initial geometry management before positioning menu
   (unless (realized-p menu)
     (initialize-geometry menu))
-
-  (let ((parent  (contact-parent menu))
-        (item    (first (composite-children (menu-manager menu)))))
-
+  (let ((parent (contact-parent menu))
+        (item (first (composite-children (menu-manager menu)))))
     ;; Compute the y position of the center of the first item
     ;; with respect to the menu
     (multiple-value-bind (item-x item-y)
-        (contact-translate item 0 (round (contact-height item) 2) menu)
+	(if item
+	    (contact-translate item 0 (round (contact-height item) 2) menu)
+	    (values-list '(0 0)))
       (declare (ignore item-x))
-
       ;; Try to center first item at the given location, but
       ;; make sure menu is completely visible in its parent
       (change-geometry
-        menu
-        :x (max 0 (min (- (contact-width parent) (contact-width menu))
-                       (- x (round (contact-width menu) 2))))
-        :y (max 0 (min (- (contact-height parent) (contact-height menu))
-                       (- y item-y)))
-        :accept-p t)))
+       menu
+       :x (max 0 (min (- (contact-width parent) (contact-width menu))
+		      (- x (round (contact-width menu) 2))))
+       :y (max 0 (min (- (contact-height parent) (contact-height menu))
+		      (- y item-y)))
+       :accept-p t)))
 
   ;; Make menu visible
   (setf (contact-state menu) :mapped))
@@ -108,14 +100,11 @@
 
 (defun menu-choose (menu x y)
   "Present the MENU at the given location and return the label of the
-item chosen. If no item is chosen, then nil is returned."
-
+   item chosen. If no item is chosen, then nil is returned."
   ;; Set menu callback to return chosen item label
   (add-callback menu :select 'throw-menu-selection menu)
-
   ;; Display the menu so that first item is at x,y.
   (menu-present menu x y)
-
   ;; Event processing loop
   (catch :menu-selection
     (loop (process-next-event (contact-display menu)))))
@@ -124,37 +113,7 @@ item chosen. If no item is chosen, then nil is returned."
   "Throw to :menu-selection tag, returning the label of the selected menu button (if any)."
   (let ((selection (choice-selection (menu-manager menu))))
     (throw :menu-selection
-           (when selection (button-label selection)))))
-
-;;; Title Frame
-
-(defcontact title-frame (composite)
-  ((font
-     :accessor title-font
-     :initarg  :font
-     :initform "fixed"
-     :type     font)
-   (foreground
-     :accessor title-foreground
-     :initarg  :foreground
-     :initform :black
-     :type     pixel)
-   (text
-     :accessor title-text
-     :initarg  :text
-     :type     string)
-   (compress-exposures
-     :allocation :class
-     :initform   :on
-     :reader     contact-compress-exposures
-     :type       (member :off :on)))
-  (:resources
-    font
-    foreground
-    text
-    (event-mask :initform #.(make-event-mask :exposure)))
-  (:documentation
-    "A composite consisting of a text title and another contact."))
+      (when selection (button-label selection)))))
 
 
 ;; Accessors
@@ -295,7 +254,7 @@ item chosen. If no item is chosen, then nil is returned."
 (defun title-adjust (title-frame)
   "Rearrange title and content according to current size of TITLE-FRAME."
   (with-slots (width height) title-frame
-    (let* ((content      (title-content title-frame))
+    (let* ((content (title-content title-frame))
            (border-width (contact-border-width content)))
 
       ;; Determine dimensions of title string
@@ -340,16 +299,10 @@ item chosen. If no item is chosen, then nil is returned."
   (declare (ignore width height border-width))
   (title-adjust title-frame))
 
-
-
-;;                                   Display
-
 (defmethod display ((title-frame title-frame) &optional x y width height &key)
   (declare (ignore x y width height))
-
   (with-slots (font text foreground background) title-frame
     (multiple-value-bind (title-x title-y) (title-position title-frame)
-
       ;; Draw title string in "reverse-video"
       (using-gcontext (gc :drawable   title-frame
                           :font       font
@@ -358,129 +311,103 @@ item chosen. If no item is chosen, then nil is returned."
         (draw-image-glyphs title-frame gc title-x title-y text)))))
 
 
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                  Column                                    |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-(defcontact column (composite) ()
-  (:documentation
-    "Arranges its children in a vertical column."))
+;;; Column
 
 (defmethod manage-geometry ((column column) child x y width height border-width &key)
   (with-slots
-    ((child-width width)
-     (child-height height)
-     (child-border-width border-width)
-     (child-x x)
-     (child-y y))
-    child
-
+	((child-width width)
+	 (child-height height)
+	 (child-border-width border-width)
+	 (child-x x)
+	 (child-y y))
+      child
     (let*
-      ;; No position change can be approved.
-      ((position-approved-p     (not (or (unless (null x) (/= x child-x))
-                                         (unless (null y) (/= y child-y)))))
-
-       ;; Check if requested size change can be approved.
-       (total-width            (+ child-width child-border-width child-border-width))
-       (total-height           (+ child-height child-border-width child-border-width))
-       (requested-width        (or width child-width))
-       (requested-height       (or height child-height))
-       (requested-border-width (or border-width child-border-width))
-       (new-total-width        (+ requested-width requested-border-width requested-border-width))
-       (new-total-height       (+ requested-height requested-border-width requested-border-width)))
-
+	;; No position change can be approved.
+	((position-approved-p     (not (or (unless (null x) (/= x child-x))
+					   (unless (null y) (/= y child-y)))))
+	 ;; Check if requested size change can be approved.
+	 (total-width            (+ child-width child-border-width child-border-width))
+	 (total-height           (+ child-height child-border-width child-border-width))
+	 (requested-width        (or width child-width))
+	 (requested-height       (or height child-height))
+	 (requested-border-width (or border-width child-border-width))
+	 (new-total-width        (+ requested-width requested-border-width requested-border-width))
+	 (new-total-height       (+ requested-height requested-border-width requested-border-width)))
       ;; Refuse size change immediately if it reduces item size
       (when (or (< new-total-width total-width) (< new-total-height total-height))
         (return-from manage-geometry
           (values
-            nil
-            child-x
-            child-y
-            (- child-width requested-border-width requested-border-width)
-            (- child-height requested-border-width requested-border-width)
-            requested-border-width)))
-
+	   nil
+	   child-x
+	   child-y
+	   (- child-width requested-border-width requested-border-width)
+	   (- child-height requested-border-width requested-border-width)
+	   requested-border-width)))
       ;; Approve size change immediately if it does not affect item size
       (when (and (= new-total-width total-width) (= new-total-height total-height))
         (return-from manage-geometry
           (values
-            position-approved-p
-            child-x
-            child-y
-            requested-width
-            requested-height
-            requested-border-width)))
-
+	   position-approved-p
+	   child-x
+	   child-y
+	   requested-width
+	   requested-height
+	   requested-border-width)))
       ;; Otherwise, a larger item size has been requested.
       ;; Check if column size can be enlarged sufficiently.
       (multiple-value-bind (column-width column-height)
           (column-preferred-size column new-total-width new-total-height)
-
         ;; Request change to preferred column size
         (multiple-value-bind
-          (approved-p approved-x approved-y approved-width approved-height)
+	      (approved-p approved-x approved-y approved-width approved-height)
             (change-geometry column :width column-width :height column-height)
           (declare (ignore approved-x approved-y))
-
           (if approved-p
-
               ;; Larger column size approved.
               (return-from manage-geometry
                 (values
-                  ;; When requested child geometry approved (both size and position),
-                  ;; then return a function to implement the after-effect of approved
-                  ;; child geometry changes. Column layout will then reflect the new
-                  ;; item size.
-                  (when position-approved-p 'change-layout)
-                  child-x
-                  child-y
-                  requested-width
-                  requested-height
-                  requested-border-width))
-
+		 ;; When requested child geometry approved (both size and position),
+		 ;; then return a function to implement the after-effect of approved
+		 ;; child geometry changes. Column layout will then reflect the new
+		 ;; item size.
+		 (when position-approved-p 'change-layout)
+		 child-x
+		 child-y
+		 requested-width
+		 requested-height
+		 requested-border-width))
               ;; Larger column size NOT approved. Return best item size that could fit
               ;; approved column size
               (return-from manage-geometry
                 (values
-                  nil
-                  child-x
-                  child-y
-                  (- approved-width requested-border-width requested-border-width)
-                  (- (floor approved-height (length (composite-children column)))
-                     requested-border-width requested-border-width)
-                  requested-border-width))))))))
-
+		 nil
+		 child-x
+		 child-y
+		 (- approved-width requested-border-width requested-border-width)
+		 (- (floor approved-height (length (composite-children column)))
+		    requested-border-width requested-border-width)
+		 requested-border-width))))))))
 
 (defmethod change-layout ((column column) &optional newly-managed)
   (declare (ignore newly-managed))
   (with-slots (width height) column
-
     ;; Compute the maximum preferred size of all children.
     (multiple-value-bind (item-width item-height)
         (column-item-size column)
-
       ;; Compute preferred column size, assuming this item size
       (multiple-value-bind (preferred-width preferred-height)
           (column-preferred-size column item-width item-height)
-
         ;; Try to ensure at least preferred size
         (if
-          (or (setf preferred-width  (when (< width preferred-width)   preferred-width))
-              (setf preferred-height (when (< height preferred-height) preferred-height)))
-
-          ;; Ask parent for larger size
-          (change-geometry column
-                           :width    preferred-width
-                           :height   preferred-height
-                           :accept-p t)
-
-          ;; Else current size is big enough
-          (column-adjust column item-width item-height))))))
-
+	 (or (setf preferred-width  (when (< width preferred-width)   preferred-width))
+	     (setf preferred-height (when (< height preferred-height) preferred-height)))
+	 ;; Ask parent for larger size
+	 (change-geometry column
+			  :width    preferred-width
+			  :height   preferred-height
+			  :accept-p t)
+	 ;; Else current size is big enough
+	 (column-adjust column item-width item-height))))))
 
 (defmethod preferred-size ((column column) &key width height border-width)
   (multiple-value-bind (item-width item-height)
@@ -525,7 +452,6 @@ ITEM-WIDTH and ITEM-HEIGHT."
       (unless item-height
         (multiple-value-setq (item-width item-height)
           (column-item-size column)))
-
       ;; Compute item spacing
       (let* ((number-items (length children))
              (margin       (max (round (- width item-width)
@@ -534,7 +460,6 @@ ITEM-WIDTH and ITEM-HEIGHT."
              (space        (max (round (- height (* number-items item-height))
                                        (1+ number-items))
                                 0)))
-
         ;; Set size and position of each child
         (let ((y 0))
           (dolist (child children)
@@ -544,91 +469,24 @@ ITEM-WIDTH and ITEM-HEIGHT."
                 (move child margin (incf y space))))
             (incf y item-height)))))))
 
-
 (defmethod resize :after ((column column) width height border-width)
   (declare (ignore width height border-width))
   (column-adjust column))
 
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                  Choices                                   |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-(defcontact choices (column)
-
-  ((selection
-     :reader   choice-selection
-     :initform nil
-     :type     (or null contact)))
-
-  (:documentation
-    "A column of items to choose from."))
-
-
+;;; Choices
 (defmethod add-child :after ((choices choices) child &key)
   ;; Initialize child's :select callback
   (add-callback child :select 'choice-select choices child))
-
 
 (defmethod choice-select ((choices choices) child)
   ;; Record current selection
   (with-slots (selection) choices
     (setf selection child))
-
   ;; Invoke selection callback
   (apply-callback choices :select))
 
 
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                  Button                                    |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-(defcontact button (contact)
-
-  ((label
-     :accessor   button-label
-     :initarg    :label
-     :initform   ""
-     :type       string)
-
-   (font
-     :accessor   button-font
-     :initarg    :font
-     :initform   "fixed"
-     :type       font)
-
-   (foreground
-     :accessor   button-foreground
-     :initarg    :foreground
-     :initform   :black
-     :type       pixel)
-
-   (compress-exposures
-     :allocation :class
-     :initform   :on
-     :reader     contact-compress-exposures
-     :type       (member :off :on)))
-
-  (:resources
-    (background :initform :white)
-    (border     :initform :white)
-    font
-    foreground
-    label)
-
-  (:documentation
-    "Triggers an action."))
-
-
-
-
-;;                                   Display
+;; Display
 
 (defmethod display ((button button) &optional x y width height &key)
   (declare (ignore x y width height))
@@ -694,20 +552,19 @@ ITEM-WIDTH and ITEM-HEIGHT."
 ;;; Demonstrations
 
 (defun just-say-lisp (host &optional (font-name "fixed"))
-  (let* ((display   (open-contact-display 'just-say-lisp :host host))
-         (screen    (contact-screen (display-root display)))
-         (fg-color  (screen-black-pixel screen))
-         (bg-color  (screen-white-pixel screen))
+  (let* ((display (open-contact-display 'just-say-lisp :host host))
+         (screen (contact-screen (display-root display)))
+         (fg-color (screen-black-pixel screen))
+         (bg-color (screen-white-pixel screen))
          ;; Create menu
-         (menu      (make-contact
-                      'menu
-                      :parent     display
-                      :font       font-name
-                      :title      "Please pick your favorite language:"
-                      :foreground fg-color
-                      :background bg-color))
-         (menu-mgr  (menu-manager menu)))
-
+         (menu (make-contact
+		'menu
+		:parent     display
+		:font       font-name
+		:title      "Please pick your favorite language:"
+		:foreground fg-color
+		:background bg-color))
+         (menu-mgr (menu-manager menu)))
     ;; Create menu items
     (dolist (label '("Fortran" "APL" "Forth" "Lisp"))
       (make-contact
@@ -716,7 +573,6 @@ ITEM-WIDTH and ITEM-HEIGHT."
         :label      label
 	:font       font-name
         :foreground fg-color))
-
     ;; Bedevil the user until he picks a nice programming language
     (unwind-protect
         (loop
@@ -725,42 +581,35 @@ ITEM-WIDTH and ITEM-HEIGHT."
             (let ((choice (menu-choose menu x y)))
               (when (string-equal "Lisp" choice)
                 (return)))))
-
       (close-display display))))
 
-
-(defun pick-one (host &rest strings)
-  (let* ((display  (open-contact-display 'pick-one :host host))
-         (menu     (make-contact 'menu :parent display :title "Pick one:")))
-
+(defun pick-one (host &optional (strings '("button1" "button2" "buttor3")))
+  (let* ((display (open-contact-display 'pick-one :host host))
+         (menu (make-contact 'menu
+			     :parent display
+			     :title "Pick one:"))
+	 (menu-mgr (menu-manager menu)))
     ;; Create menu items
     (dolist (string strings)
-      (make-contact 'button :parent (menu-manager menu) :label string))
-
+      (make-contact 'button :parent menu-mgr :label string))
     ;; Set menu callback to return chosen item label
     (add-callback menu :select 'throw-menu-selection menu)
-
     ;; Display the menu so that first item is at x,y
     (initialize-geometry menu)
     (multiple-value-bind (x y) (query-pointer (contact-parent menu))
       (menu-present menu x y))
-
     ;; Event processing loop
     (let ((selected (catch :menu-selection
                      (loop (process-next-event display)))))
-
       ;; Close server connection
       (close-display display)
-
       ;; Return selected string
       selected)))
-
 
 (defun resource-menu (host menu-name item-defaults &rest buttons)
   (let*
     ((display (open-contact-display 'resource-menu :host host))
      (menu    (make-contact 'menu :parent display :name menu-name)))
-
     (unwind-protect
 	(progn
 	  ;; Create menu items
@@ -770,19 +619,15 @@ ITEM-WIDTH and ITEM-HEIGHT."
 			  :name     (intern (string label))
 			  :label    (format nil "~:(~a~)" label)
 			  :defaults item-defaults))
-
 	  ;; Set menu callback to return chosen item label
 	  (add-callback menu :select 'throw-menu-selection menu)
-
 	  ;; Display the menu so that first item is at x,y
 	  (initialize-geometry menu)
 	  (multiple-value-bind (x y) (query-pointer (contact-parent menu))
 	    (menu-present menu x y))
-
 	  ;; Event processing loop --- return selected string.
 	  (catch :menu-selection
 	    (loop (process-next-event display))))
-
       (close-display display))))
 
 

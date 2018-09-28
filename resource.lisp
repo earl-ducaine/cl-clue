@@ -38,7 +38,7 @@
 	       (when (equal name (string (xlib::resource-database-name database)))
 		 (unless title-p
 		   (format t "~%Value      Name")
-		   (setf title-p t))      
+		   (setf title-p t))
 		 (format t "~%~10s (" (xlib::resource-database-value database))
 		 (dotimes (i level)
 		   (when (plusp i) (princ " "))
@@ -71,7 +71,7 @@
 	(unwind-protect
 	    (default-resources (display-root display) resource-class resource-name)
 	  (close-display display)))
-      
+
       (let* ((contact-class (class-name (class-of contact)))
 	     (class-key     (intern (symbol-name resource-class) 'keyword))
 	     (name-key      (when resource-name (intern (symbol-name resource-name) 'keyword)))
@@ -88,7 +88,7 @@
 					   (eq (or rclass rname) class-key)
 					   (or (null resource-name)
 					       (eq rname name-key))))))))
-	
+
 	(when resources
 	  (get-resources
 	    nil
@@ -107,7 +107,7 @@
 	resources
       (mapcar #'car resources))))
 
-(defun get-resources (arglist resources parent full-name full-class)	
+(defun get-resources (arglist resources parent full-name full-class)
   ;; Useful for making init-plists for contacts
   ;; arglist   Specifies  the  ArgList  to   override   resources
   ;;	   obtained from the resource database.
@@ -115,36 +115,24 @@
   ;; full-name Specifies the name of this contact (may be overrid-
   ;;	   den by the arglist).
   ;; full-class Specifies the class of this contact.
-  
-  (declare (type list arglist)
-	   (type contact parent)
-	   (type list full-name full-class)
-	   (values (list values) full-name full-type))
-  
   (do* ((table (get-search-table *database* full-name full-class))
 	(resources resources (cdr resources))
 	(resource (caar resources) (caar resources))
 	(value-type nil)
 	(arg nil)
 	(result nil))
-
        ((endp resources) result)
-    
     (setq value-type (getf (cdar resources) :type))
     (if (setq arg (getf arglist resource))
-
 	(when value-type
 	  (let ((carg (convert parent arg value-type)))
 	    (if (or carg (null arg))
 		(setq arg carg)
 		(error "The ~s initialization is ~s which isn't type ~s"
 		       resource arg value-type))))
-	
 	(let ((value (get-search-resource table resource (getf (cdar resources) :class resource)))
 	      (db nil))
-	  
 	  (if value
-
 	      ;; Resource in the database
 	      (when (and (setq arg value) value-type)
 		(let ((carg (convert parent value value-type)))
@@ -152,7 +140,6 @@
 		      (setq arg carg)
 		      (error "The resource value for ~s is ~s which isn't type ~s"
 			     (reverse (cons resource db)) value value-type))))
-	      
 	      ;; Resource NOT in the database
 	      (let ((initform (getf (cdar resources) :initform)))
 		(when initform			; Resource has an initform
@@ -166,8 +153,6 @@
     (when arg
       (setq result (list* resource arg result)))))
 
-
-
 (defun resource (contact name)
   "Lookup resource NAME for CONTACT"
   (check-type name symbol)
@@ -179,30 +164,25 @@
     (or (getf initialization name)
 	(get-search-resource (second initialization) name (or class name)))))
 
-#+explorer
-(defgeneric convert (contact value type)
-  ;; This :argument-precedence-order makes things more efficient.
-  (:argument-precedence-order type contact value))
-
 ;; The default method
 (defmethod convert (contact value (type t))
   "Convert VALUE to TYPE"
   (cond
     ((and (consp type) (eq (car type) 'or))		 ; OR type -- use the first conversion that works
-     (dolist (typ (cdr type))				 
+     (dolist (typ (cdr type))
        (if (eq typ 'null)
 	   (when (null value) (return nil))
 	   (let ((result (convert contact value typ)))
 	     (when result
 	       (return result))))))
-    
+
     ((and (consp type) (eq (car type) 'member))		 ; MEMBER type
      (unless (keywordp value)
        (setq value (convert contact value 'keyword)))
      (and (member value (cdr type) :test #'eq) value))
-    
+
     ((typep value type) value)				 ; If type works, use it!
-    
+
     ((or (stringp value) (symbolp value))		 ; Last resort, try read-from-string
      (let ((value (string value))
 	   (*read-base* 10.))
@@ -223,23 +203,23 @@
 (defmethod convert (contact value (type (eql 'pixel)))
   (typecase value
 
-    (stringable	
+    (stringable
      (when (symbolp value) (setq value (symbol-name value)))
      (let ((screen (contact-screen contact)))
        (cond
 	 ((equalp value "WHITE")
 	  (screen-white-pixel screen))
-	 
+
 	 ((equalp value "BLACK")
 	  (screen-black-pixel screen))
-	 
+
 	 (t
 	  (let ((cache (getf (screen-plist screen) :color-cache)))
 	    ;; Pixel already found for this color name?
 	    (or
 	      ;; Yes, return cached pixel.
 	      (rest (assoc value cache :test #'equalp))
-	      
+
 	      ;; No, allocate pixel for color name.
 	      (let*
 		((color (convert contact value 'color))
@@ -253,7 +233,7 @@
     (color
      (ignore-errors
        (alloc-color (screen-default-colormap (contact-screen contact)) value)))
-    
+
     (pixel value)
     (otherwise nil)))
 
@@ -271,34 +251,34 @@
      (ignore-errors (open-font (contact-display contact) value)))
     (font value)
     (otherwise nil)))
-     
+
 (defmethod convert (contact value (type (eql 'pixmap)))
   (flet
-    ((find-pixmap (contact image) 
+    ((find-pixmap (contact image)
        (let ((drawable (if (realized-p contact) contact (contact-root contact))))
 	 (cond
 	   ((= (image-depth image) (contact-depth contact))
 	    (contact-image-pixmap drawable image))
-	   
+
 	   ((= (image-depth image) 1)
 	    (contact-image-mask drawable image))))))
-    (typecase value    
+    (typecase value
       (stringable
        (let ((image (stringable-value value 'image)))
 	 (when image (find-pixmap contact image))))
-      
+
       ((or (rational 0 1) (float 0.0 1.0))
        (let ((gray (svref '#(0%gray  6%gray  12%gray 25%gray 37%gray 50%gray
 			     62%gray 75%gray 88%gray 93%gray 100%gray)
 			  (round (* value 10)))))
 	 (and gray (boundp gray) (find-pixmap contact (symbol-value gray)))))
-      
+
       (image     (find-pixmap contact value))
       (pixmap    value)
       (otherwise nil))))
 
 (defmethod convert (contact value (type (eql 'image)))
-  (declare (ignore contact))  
+  (declare (ignore contact))
   (typecase value
     (stringable (stringable-value value 'image))
     (image      value)
@@ -315,21 +295,27 @@
 	(when (typep (symbol-value symbol) type) (symbol-value symbol))
 	symbol))))
 
-(defmethod convert (contact value (type (eql 'cursor)))  
+(defmethod convert (contact value (type (eql 'cursor)))
   (typecase value
-    (card8      (contact-glyph-cursor contact value))
-    (stringable (let ((value (stringable-value value '(or image card8))))
-		  (when value (convert contact value type))))
-    (image      (let* ((image-name (image-name value))
-		       (mask-name  (intern (format nil "~a-MASK" image-name)
-					   (symbol-package image-name))))
-		  (contact-image-cursor
-		    value
-		    :mask (when (and (boundp mask-name)
-				     (typep (symbol-value mask-name) '(or pixmap image)))
-			    (symbol-value mask-name)))))
-    (cursor     value)
-    (otherwise  nil)))
+    (card8
+     (contact-glyph-cursor contact value))
+    (stringable
+     (let ((value (stringable-value value '(or image card8))))
+       (when value (convert contact value type))))
+    (image
+     (let* ((image-name (image-name value))
+	    (mask-name  (intern (format nil "~a-MASK" image-name)
+				(symbol-package image-name))))
+       (contact-image-cursor
+	contact
+	value
+	:mask (when (and (boundp mask-name)
+			 (typep (symbol-value mask-name) '(or pixmap image)))
+		(symbol-value mask-name)))))
+    (cursor
+     value)
+    (otherwise
+     nil)))
 
 (defmethod convert (contact value (type (eql 'boolean)))
   (declare (ignore contact))
@@ -370,5 +356,3 @@
 		  (result nil))
 		 ((endp name-values) (nreverse result))
 	      (push `(delete-resource *database* ',(first name-values)) result))))
-
-

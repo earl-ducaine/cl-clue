@@ -17,13 +17,14 @@
   (pushnew :cleh *features*))
 
 (asdf:defsystem clue
-  :depends-on (clx closer-mop)
+  :depends-on (clx closer-mop trivial-gray-streams)
   :components
   ((:file "package")
-   (:file "defcontact" :depends-on("package"))
+   (:file "defcontact" :depends-on("event-parse"))
+   (:file "event-parse" :depends-on("package"))
+   (:file "intrinsics" :depends-on("event-parse" "defcontact"))
+   (:file "intrinsics-methods" :depends-on("intrinsics"))
    (:file "events" :depends-on("intrinsics" "event-parse"))
-   (:file "event-parse" :depends-on("defcontact"))
-   (:file "intrinsics" :depends-on("event-parse"))
    (:module resource
 	    :pathname ""
 	    :depends-on("caches")
@@ -36,4 +37,9 @@
    (:file "stream" :depends-on("intrinsics" "resource" "events"))
    (:file "virtual" :depends-on("intrinsics" "resource" "events"))
    (:file "caches" :depends-on("intrinsics"))
-   (:file "obsolete" :depends-on("package"))))
+   (:file "obsolete" :depends-on("package"))
+   (:module examples
+	    :depends-on("obsolete" "caches" "root-gmgmt" "virtual")
+	    :components
+	    ((:file "menu-macros")
+	     (:file "menu")))))

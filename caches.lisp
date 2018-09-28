@@ -134,7 +134,7 @@
 	      ,lookup)
 	   `,lookup)))))
 
-(defconstant *gcontext-test-sequence*
+(defconstant +gcontext-test-sequence+
   (let ((state-indexes (append xlib::+gcontext-components+ '(:clip :dash))))
     (mapcar
      (lambda (key) (position key state-indexes))
@@ -175,7 +175,6 @@
    specify the attributes used to create a matching gcontext."
   (let ((desired (xlib::gcontext-local-state match)))
     (declare (type xlib::gcontext-state desired))
-    (declare (optimize speed (safety 0)))
     (or
       ;; Look up matching gcontext in cache.
       (do*
@@ -188,7 +187,7 @@
 	     ;; Next gcontext matches?...
 	     (let ((test-state (xlib::gcontext-local-state gcontext)))
 	       (declare (type xlib::gcontext-state test-state))
-	       (dolist (i *gcontext-test-sequence* t)
+	       (dolist (i +gcontext-test-sequence+ t)
 		 (unless (equalp  (svref test-state i) (svref desired i))
 		   (return nil))))
 	     ;; ...and matching gcontext is at head of cache?

@@ -102,8 +102,6 @@
 
     actions))
 
-
-(proclaim '(inline event-translations-mask))
 (defun event-translations-mask (translations &optional (initial-mask 0))
   "Return the bitwise-or of the INITIAL-MASK and the event mask
 specified by the given event TRANSLATIONS."
@@ -135,12 +133,9 @@ specified by the given event TRANSLATION."
 	  (t (apply mask-filter event-spec-args))	 ; Return mask for event-spec
 	  )))))
 
-
 (defmacro clue-resources (class-name)
   `(get ,class-name 'resources))
 
-
-(proclaim '(inline class-name-event-translations))
 (defun class-name-event-translations (class-name)
   (get class-name 'event-translations))
 

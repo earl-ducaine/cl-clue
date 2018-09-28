@@ -36,19 +36,14 @@
 ;;;  02/12/90   MAY	More fixes for rubout-handler code.
 
 
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;  WARNING: Non-portable code! A portable implementation of an interactive-  |
-;;;  stream will not be possible until a standard generic function protocol    |
-;;;  for Common Lisp streams has been defined. This implementation works       |
-;;;  for Explorers and other Lisp machines. It may serve as an example for     |
-;;;  other implementations as well.                                            |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
+;;;  WARNING: Non-portable code! A portable implementation of an
+;;;  interactive-stream will not be possible until a standard generic
+;;;  function protocol for Common Lisp streams has been defined. This
+;;;  implementation works for Explorers and other Lisp machines. It
+;;;  may serve as an example for other implementations as well.
 
 
 (in-package :cluei)
-
 
 (defcontact interactive-stream
 	    (contact #+(and Explorer CLOS) TICLOS:FUNDAMENTAL-CHARACTER-OUTPUT-STREAM
@@ -157,12 +152,12 @@
   (reset-more-height self))
 
 (defevent interactive-stream :key-press stream-save-key)
+
 (defmethod stream-save-key ((stream interactive-stream))
   (with-event (character display)
     (let ((char character))
       (when (characterp char)
 	;; translate return to newline.
-	#+(and unix allegro)	;; may 12/14/89  added (for al)
 	(if (char= char #\return)
 	    (setq char #\newline))
 	(append-characters display char)))
@@ -170,6 +165,7 @@
 
 (defevent interactive-stream :focus-in (stream-display-cursor t))
 (defevent interactive-stream :focus-out (stream-display-cursor nil))
+
 (defmethod stream-display-cursor ((stream interactive-stream) fill-p)
   (with-slots (gcontext cursor-x cursor-y) stream
     (draw-cursor stream cursor-x cursor-y gcontext :erase-p t :fill-p (not fill-p))
@@ -459,10 +455,10 @@ leaving the character in the buffer.  If no character is available, return NIL."
   (setf (slot-value (the interactive-stream interactive-stream) 'cursor-x) 0)
   (clear-eol interactive-stream))
 
-(defun clear-eol (interactive-stream)
+(defun clear-eol-internal (interactive-stream)
   ;; Clear the current line starting at the current cursor-x
-  (with-slots (font cursor-x cursor-y line-height width line-height gcontext)
-	      (the interactive-stream interactive-stream)
+  (with-slots (font cursor-x cursor-y line-height width gcontext)
+      interactive-stream
     (clear-area interactive-stream :x cursor-x :y (+ (font-descent font)
 						     (- cursor-y line-height))
 		:width width :height  line-height)
@@ -546,7 +542,6 @@ leaving the character in the buffer.  If no character is available, return NIL."
 ;; may 12/14/89 Fix cosmetics.
 (defun draw-lozenged-string (window gcontext x0 y0 string font)
   "Display string inside a lozenge at X0 Y0."
-  (declare (values right-coordinate bottom-coordinate))
   (multiple-value-bind (width ascent descent)	;; may 12/14/89
       (text-extents font string)
     (let* (;; Put some pixels to the top and bottom of the string and still stay inside lineheight.
@@ -583,131 +578,110 @@ A lozenge whose width and height are equal is a diamond shape.)"
 		x         (+ y hh)))	  ;\
     ))
 
-
-;;;-----------------------------------------------------------------------------
 ;;; Alas, Common-lisp doesn't specify a portable way to make your own stream object.
 ;;; Here is a zetalisp implementation for lisp machines using clos-kludge.
-;;; PLEASE mail an implementation for YOUR lisp to clue-review@dsg.csc.ti.com
-#+(and lispm (not clos))
-(defun (:property interactive-stream si:named-structure-invoke)
-       (method self &rest args
-	&aux (operations '( :which-operations :operation-handled-p :send-if-handles
-			   :print-self :listen :clear-input :untyi :tyi :line-in
-			   :clear-screen :tyo :string-out :fresh-line :rubout-handler :clear-eol)))
-  (ecase method
-    (:which-operations operations)
-    (:operation-handled-p (member (first args) operations))
-    (:send-if-handles (when (member (first args) operations)
-			(apply self args)))
-    (:print-self (format (first args) "#<interactive-stream ~o>" (si:%pointer self)))
-    (:listen (apply #'stream-listen self args))
-    (:clear-input (apply #'stream-clear-input self args))
-    (:untyi (apply #'stream-unread-char self args))
-    ((:tyi :any-tyi) (stream-read-char self))
-    (:line-in (let ((leader (car args)))
-		(stream-read-line self :leader-length (and (numberp leader) leader))))
-    (:clear-screen (apply #'stream-clear-output self args))
-    (:tyo (apply #'stream-write-char self args))
-    (:string-out (apply #'stream-write-string self args))
-    (:fresh-line (apply #'stream-fresh-line self args))
-    (:clear-eol (apply #'clear-eol self args))
-    (:force-output (display-force-output (contact-display self)))
-    (:finish (display-finish-output (contact-display self)))
-    (:rubout-handler (apply #'stream-rubout-handler self args))
+;;; Please mail an implementation for YOUR lisp to clue-review@dsg.csc.ti.com
 
-;;    #+ti (:preemptable-read (apply #'stream-rubout-handler self args))
-    #+ti (:read-cursorpos (values 0 0))
-    #+ti (:process si:current-process)
-    ))
 
-#+(and Explorer CLOS)
-(progn
 
-;; may 12/14/89 Hook READ function into interactive-stream
-(defmethod (interactive-stream :rubout-handler) (options function &rest args)
-  ;Args are args to FUNCTION, the first arg being the stream.
-  (apply #'stream-rubout-handler zl:self options function args))
 
-;; may 12/14/89 needed for ucl's handle-read-function in break loop
-(defmethod (interactive-stream :preemptable-read) (options function &rest args)
+
+
+
+
+
+
+(defclass interactive-stream (trivial-gray-streams:fundamental-character-input-stream)
+  ((cursorpos :initform 0)
+   (cursor-x :initform 0)
+   (cursor-y :initform 0)
+   (font :initform 0)
+   (line-height :initform 0)
+   (output-history :initform 0)))
+
+(defmethod cursorpos ((stream interactive-stream) &rest args)
+  (apply #'read-cursorpos stream args))
+
+(defmethod rubout-handler ((stream interactive-stream) options function &rest args)
+  ;; Args are args to function, the first arg being the stream.
+  (apply #'stream-rubout-handler stream options function args))
+
+(defmethod preemptable-read ((stream interactive-stream) options function &rest args)
   "This just does the same thing as :rubout-handler for now ..."
-  ;Args are args to FUNCTION, the first arg being the stream.
-  (apply #'stream-rubout-handler zl:self options function args))
+  (apply #'stream-rubout-handler stream options function args))
 
-(defmethod (interactive-stream :clear-eol) ()
-  (clear-eol zl:self))
+(defmethod clear-eol ((stream interactive-stream))
+  (clear-eol-internal stream))
 
-(defmethod (interactive-stream :line-in) (&optional leader)
-  (stream-read-line zl:self :leader-length (and (numberp leader) leader)))
+(defmethod line-in ((stream interactive-stream) &optional leader)
+  (stream-read-line stream :leader-length (and (numberp leader) leader)))
 
-(defmethod ticlos:stream-read-line ((stream interactive-stream))
-  (stream-read-line stream))
+(defmethod stream-read-line ((stream interactive-stream) &rest rest)
+  (apply #'stream-read-line stream rest))
 
-(defmethod ticlos:stream-read-char-no-hang ((self interactive-stream))
+(defmethod stream-read-char-no-hang ((self interactive-stream))
   (and (listen-character (contact-display self))
        (stream-read-char self)))
 
-(defmethod ticlos:stream-force-output ((stream interactive-stream))
+(defmethod stream-force-output ((stream interactive-stream))
   (display-force-output (contact-display stream)))
 
-(defmethod ticlos:stream-finish-output ((stream interactive-stream))
+(defmethod stream-finish-output ((stream interactive-stream))
   (display-finish-output (contact-display stream)))
 
-(defmethod ticlos:stream-line-column ((stream interactive-stream))
-  (values (zl:send stream :read-cursorpos ':character)))
+(defmethod stream-line-column ((stream interactive-stream))
+  (values (cursorpos stream :character)))
 
-(defmethod ticlos:stream-start-line-p ((stream interactive-stream))
+(defmethod stream-start-line-p ((stream interactive-stream))
   (zerop (slot-value stream 'cursor-x)))
 
-(defmethod (interactive-stream :read-cursorpos) (&optional units)
-  (declare (notinline char-width))
+(defmethod read-cursorpos ((stream interactive-stream) &optional units)
+  (with-slots (cursor-x cursor-y font line-height)
+      stream
   (if (eq units ':character)
       (values (round cursor-x (char-width font (char-int #\n)))
 	      (round cursor-y line-height))
     ;; else assume pixels
-    (values cursor-x cursor-y)))
+    (values cursor-x cursor-y))))
 
 ;; may 12/14/89 Added recording for output history.  Although we
 ;; (original author, actually) are using the size of #\n to calculate
 ;; pixels and the actual char #\space to put in history - it is only
 ;; intended to work for fixed-width fonts.  Variable fonts require a
 ;; good guess - but anything is better than NO guess at all.
-(defmethod (interactive-stream :increment-cursorpos) (dx dy &optional units)
-  "UNITS can be :pixel (default) or :character.
-This is called by format:format-ctl-tab and anyone else that
-won't mind the output history being recorded as the number of space chars
-needed to redisplay the same cursor movement, if possible."
+(defmethod increment-cursorpos ((stream interactive-stream) dx dy &optional units)
+  "UNITS can be :pixel (default) or :character. This is called by
+   format:format-ctl-tab and anyone else that won't mind the output
+   history being recorded as the number of space chars needed to
+   redisplay the same cursor movement, if possible."
   ;; A good test of this is (si:print-herald), then control-l
-  (declare (notinline char-width))
-  (LET (newx newy
-	(ch-width (char-width font (char-int #\n))))
-    (if (eq units ':character)
-	(SETQ newx (+ cursor-x (* dx ch-width))
-	      newy (+ cursor-y (* dy line-height)))
-	;; else assume pixels (default)
-	(SETQ newx (+ cursor-x dx)
-	      newy (+ cursor-y dy)))
-    (UNLESS *no-stream-history-p*
-      (DOTIMES (i (CEILING (MAX 0 (- newx cursor-x)) ch-width))
-	(VECTOR-PUSH-EXTEND #\space (car output-history))))
-    (stream-move-cursor zl:self newx newy)))
+  (with-slots (cursor-x cursor-y font line-height output-history)
+      stream
+    (let (newx newy
+	       (ch-width (char-width font (char-int #\n))))
+      (if (eq units ':character)
+	  (setq newx (+ cursor-x (* dx ch-width))
+		newy (+ cursor-y (* dy line-height)))
+	  ;; else assume pixels (default)
+	  (setq newx (+ cursor-x dx)
+		newy (+ cursor-y dy)))
+      (unless *no-stream-history-p*
+	(dotimes (i (ceiling (max 0 (- newx cursor-x)) ch-width))
+	  (vector-push-extend #\space (car output-history))))
+      (stream-move-cursor stream newx newy))))
 
-(defmethod (interactive-stream :process) () si:current-process)
+(defmethod process ((stream interactive-stream))
+  nil)
 
-  ) ; end Explorer and CLOS
-
-
-;;-----------------------------------------------------------------------------
-;; A SIMPLE rubbout handler
-;;		(what an understatement, but it's something to build on...)
-
-
+;; A simple rubbout handler (what an understatement, but it's
+;; something to build on...)
 (defmacro with-input-editing ((stream &optional rubout-options) &body body)
-  "Execute BODY inside of STREAM's stream-rubout-handler method.
-If BODY does input from STREAM, it will be done with rubout processing
-if STREAM is an interactive-stream.
-RUBOUT-OPTIONS should be the options for the stream-rubout-handler method"
-  (unless stream (setq stream '*standard-input*))
+  "execute body inside of stream's stream-rubout-handler method. if
+   body does input from stream, it will be done with rubout processing
+   if stream is an interactive-stream.  rubout-options should be the
+   options for the stream-rubout-handler method"
+  (unless stream
+    (setq stream '*standard-input*))
   `(stream-rubout-handler ,stream ,rubout-options
 			  #'(lambda () ,@body)))
 
@@ -728,7 +702,7 @@ RUBOUT-OPTIONS should be the options for the stream-rubout-handler method"
 	  (funcall (stream-rubout-handler-function contact) contact option-plist function)))
     (apply function args)))
 
-(defmacro rubout-handler (&rest options &key (stream *terminal-io*) body
+(defmacro common-windows-rubout-handler (&rest options &key (stream *terminal-io*) body
 			  pass-through do-not-echo help initial-input)
   "Common-windows rubout-hander"
   (declare (ignore pass-through do-not-echo help initial-input))

@@ -20,7 +20,7 @@
 
 (export
   '(
-    contact-root-shell 
+    contact-root-shell
     override-shell
     shell
     shell-mapped
@@ -32,7 +32,7 @@
     top-level-shell
     transient-shell
     with-wm-properties
-    with-wm-properties 
+    with-wm-properties
     wm-base-height
     wm-base-width
     wm-colormap-owners
@@ -50,14 +50,14 @@
     wm-max-aspect
     wm-max-height
     wm-max-width
-    wm-message 
+    wm-message
     wm-message-protocol
     wm-message-timestamp
     wm-min-aspect
     wm-min-height
     wm-min-width
     wm-protocols-used
-    wm-shell    
+    wm-shell
     wm-title
     wm-user-specified-position-p
     wm-user-specified-size-p
@@ -76,13 +76,13 @@
 (defcontact shell (composite)
   ((state        :type     (member :withdrawn :iconic :mapped)
 		 :reader   contact-state)	; setf defined below
-   
+
    (owner        :type     composite
 		 :reader   shell-owner))
   (:resources
     (state       :type     (member :withdrawn :iconic :mapped)
 		 :initform (shell-default-state)))
-  
+
   (:documentation
     "Base class for all shell contacts."))
 
@@ -94,7 +94,7 @@
   (let ((*new-shell* shell))
     (declare (special *new-shell*))
     (call-next-method)))
-    
+
 (defmethod initialize-instance :after ((shell shell) &rest initargs)
   (declare (ignore initargs))
   (with-slots (background owner) shell
@@ -155,7 +155,7 @@
 
 (defmacro with-wm-properties ((shell) &body body)
   "Batch all changes to window manager properties of the SHELL into one request
-after the BODY." 
+after the BODY."
   `(progn
      (setf (wm-changing-properties-p ,shell) t)
      ,@body
@@ -173,7 +173,7 @@ after the BODY."
 		   '(
 		     ;; class, transient-for properties not included because
 		     ;; they should only be changed during initialization
-		     
+
 		     client-machine
 		     colormap-windows
 		     command
@@ -201,22 +201,22 @@ after the BODY."
 
 (defcontact wm-shell (shell)
   ((hints                :type     (or null wm-hints)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :wm-hints
 			 :accessor shell-hints)
-   
+
    (normal-hints         :type     (or null wm-size-hints)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :wm-normal-hints
 			 :accessor shell-normal-hints)
-   
-   (protocols-used       :type     (or null list) 
-			 :initform nil 
+
+   (protocols-used       :type     (or null list)
+			 :initform nil
 			 :initarg  :wm-protocols-used
 			 :accessor wm-protocols-used)
-   
+
    (title                :type     (or null string)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :wm-title
 			 :accessor wm-title)
 
@@ -225,25 +225,25 @@ after the BODY."
 
   (:resources
     (event-mask       :initform #.(make-event-mask :structure-notify))
-    
+
     (wm-base-height   :type (or null card16))
-    (wm-base-width    :type (or null card16))             
-    (wm-delta-height  :type (or null card16))                 
-    (wm-delta-width   :type (or null card16))              
+    (wm-base-width    :type (or null card16))
+    (wm-delta-height  :type (or null card16))
+    (wm-delta-width   :type (or null card16))
     (wm-gravity       :type (or null (member :north-west :north  :north-east
 					      :west       :center :east
-					      :south-west :south  :south-east)))          
+					      :south-west :south  :south-east)))
     (wm-initial-state :type (or null (member :normal :iconic)))
-    (wm-max-aspect    :type (or null number))             
-    (wm-max-height    :type (or null card16))             
-    (wm-max-width     :type (or null card16))            
-    (wm-min-aspect    :type (or null number))             
-    (wm-min-height    :type (or null card16))             
-    (wm-min-width     :type (or null card16))            
+    (wm-max-aspect    :type (or null number))
+    (wm-max-height    :type (or null card16))
+    (wm-max-width     :type (or null card16))
+    (wm-min-aspect    :type (or null number))
+    (wm-min-height    :type (or null card16))
+    (wm-min-width     :type (or null card16))
      wm-title
     (wm-user-specified-position-p :type boolean)
     (wm-user-specified-size-p     :type boolean))
-    
+
   (:documentation
     "Base class for shells which interact with the window manager."))
 
@@ -262,10 +262,10 @@ after the BODY."
   (when (realized-p shell)
     (with-slots (protocols-used) shell
       (let ((display (contact-display shell)))
-	;; Crock! Work around bug in CLX R4.2 --- make sure all intern-atom's occur 
+	;; Crock! Work around bug in CLX R4.2 --- make sure all intern-atom's occur
 	;; outside other request functions.
 	(intern-atom display :wm_protocols)
-	(if protocols-used 
+	(if protocols-used
 	    (change-property
 	      shell :wm_protocols
 	      (mapcar #'(lambda (atom) (intern-atom display atom)) protocols-used)
@@ -315,7 +315,7 @@ after the BODY."
       (set-wm-class shell
 		    (display-name d)
 		    (display-class d)))))
-			    
+
 
 ;;;----------------------------------------------------------------------------+
 ;;;                                                                            |
@@ -586,9 +586,9 @@ after the BODY."
 ;;;----------------------------------------------------------------------------+
 
 (defmethod initialize-instance :after ((shell wm-shell) &key
-				       wm-base-height wm-base-width wm-delta-height wm-delta-width              
+				       wm-base-height wm-base-width wm-delta-height wm-delta-width
 				       wm-initial-state wm-gravity
-				       wm-max-aspect wm-max-height wm-max-width            
+				       wm-max-aspect wm-max-height wm-max-width
 				       wm-min-aspect wm-min-height wm-min-width
 				       wm-user-specified-position-p wm-user-specified-size-p
 				       wm-group wm-keyboard-input
@@ -598,12 +598,12 @@ after the BODY."
   (when wm-base-height (setf (wm-base-height shell) wm-base-height))
   (when wm-base-width (setf (wm-base-width shell) wm-base-width))
   (when wm-delta-height (setf (wm-delta-height shell) wm-delta-height))
-  (when wm-delta-width (setf (wm-delta-width shell) wm-delta-width))  
+  (when wm-delta-width (setf (wm-delta-width shell) wm-delta-width))
   (when wm-initial-state (setf (wm-initial-state shell) wm-initial-state))
   (when wm-gravity (setf (wm-gravity shell) wm-gravity))
   (when wm-max-aspect (setf (wm-max-aspect shell) wm-max-aspect))
   (when wm-max-height (setf (wm-max-height shell) wm-max-height))
-  (when wm-max-width (setf (wm-max-width shell) wm-max-width))  
+  (when wm-max-width (setf (wm-max-width shell) wm-max-width))
   (when wm-min-aspect (setf (wm-min-aspect shell) wm-min-aspect))
   (when wm-min-height (setf (wm-min-height shell) wm-min-height))
   (when wm-min-width (setf (wm-min-width shell) wm-min-width))
@@ -622,24 +622,16 @@ after the BODY."
 
 
 
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;; 		      Window Manager Shell: State management                   |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
+;;; Window Manager Shell: State management
 
 (defmethod (setf contact-state) (new-state (shell wm-shell))
-  (check-type new-state (member :withdrawn :iconic :mapped))    
-  
+  (check-type new-state (member :withdrawn :iconic :mapped))
   (with-slots (parent display state) shell
     (unless (eq state new-state)
       (let ((old-state state))
-	
 	(setf state new-state)
-	
 	(if
 	  (realized-p shell)
-	  
 	  ;; Change state now -- but don't send side-effect requests if inside
 	  ;; without-requests wrapper (i.e. eq *contact-notified*) ---
 	  ;; that is, if responding to notification of state change from window mgr.
@@ -650,15 +642,12 @@ after the BODY."
 			  (unless (eq *contact-notified* shell)
 			    (map-window shell)
 			    t))				 ; Request sent
-	      
 	      (:iconic    (if (eq old-state :withdrawn)
-			      
 			      (unless (eq *contact-notified* shell)
 				(unless (eq :iconic (wm-initial-state shell))
 				  (setf (wm-initial-state shell) :iconic))
 				(map-window shell)
 				nil)			 ; No :map-notify coming, so don't wait!
-			      
 			      (progn
 				(unless (eq *contact-notified* shell)
 				  (send-event parent
@@ -668,10 +657,9 @@ after the BODY."
 					      :type :wm_change_state
 					      :format 32
 					      :data '(3) ; Crock: this should be an xlib defconstant
-					      ))	
+					      ))
 				(shell-unmapped shell)
 				t)))			 ; Request sent
-	      
 	      (:withdrawn (prog1
 			    (unless (eq *contact-notified* shell)
 			      (unmap-window shell)
@@ -683,7 +671,6 @@ after the BODY."
 					  :configure-p nil)
 			      t)			 ; Request sent
 			    (shell-unmapped shell))))
-	    
 	    ;; Wait until resulting :(un)map-notify event has been received.
 	    (let ((*ignore-map-notify* t))
 	      (declare (special *ignore-map-notify*))
@@ -692,7 +679,7 @@ after the BODY."
 		(catch :map-notify
 		  ;; Don't update-state to avoid infinite recursion during realization.
 		  (loop (process-next-event display nil nil))))))
-	  
+
 	  ;; Not realized, let UPDATE-STATE do the work
 	  (setf (display-update-flag display) t)))))
   new-state)
@@ -710,29 +697,24 @@ after the BODY."
       (:reparent-notify
        (setf (slot-value shell 'reparented-p)
 	     (not (eq parent (contact-parent shell)))))
-      
       (:configure-notify
        ;; Update geometry slots to reflect change made interactively by user.
        (with-slots (x y width height border-width send-event-p) event
 	 (without-requests shell   ; No configure request side-effect
 	   ;; Use move/resize protocol so that any auxiliary methods will fire.
 	   (resize shell width height border-width)
-
 	   ;; Ensure shell coordinates are w.r.t root.
 	   (let ((new-x x) (new-y y))
 	     (when (and (not send-event-p) (slot-value shell 'reparented-p))
 	       (multiple-value-setq (new-x new-y)
 		 (translate-coordinates shell (- border-width) (- border-width) (contact-root shell))))
 	     (move shell new-x new-y)))))
-      
       ((:map-notify :unmap-notify)
        ;; Ignore if in response to (setf contact-state)
        (unless (boundp '*ignore-map-notify*)
-	 
 	 ;; Update state to reflect change made interactively by user.
 	 (without-requests shell
 	   (setf (contact-state shell) (if (eq key :map-notify) :mapped :iconic))))))))
-
 
 ;;;----------------------------------------------------------------------------+
 ;;;                                                                            |
@@ -742,7 +724,7 @@ after the BODY."
 
 (defstruct (wm-message (:type #-kcl (vector int32)
 			      #+kcl vector))
-  "Common data fields of all :client-message events from a window/session mgr." 
+  "Common data fields of all :client-message events from a window/session mgr."
   protocol
   timestamp)
 
@@ -763,17 +745,17 @@ after the BODY."
 (defmethod wm-take-focus ((composite composite))
   (with-slots (display children) composite
     (when (viewable-p composite)
-      (or 
+      (or
 	;; Set focus to composite itself?
 	(when (accept-focus-p composite)
 	  (set-input-focus display composite :parent)
 	  composite)
-	
+
 	;; Set focus to one of children?
 	(move-focus composite :set)
 	(move-focus composite :next)
-	
-	;; Search for descendant to take focus. 
+
+	;; Search for descendant to take focus.
 	(dolist (child children)
 	  (let ((focus (wm-take-focus child)))
 	    (when focus (return focus))))))))
@@ -794,15 +776,15 @@ after the BODY."
 
 
 (defcontact transient-shell (wm-shell)
-  ()  
+  ()
   (:documentation
     "Base class for shells which are never iconified."))
 
-(defmethod realize :after ((shell transient-shell)) 
+(defmethod realize :after ((shell transient-shell))
   ;; Send a request to change the TRANSIENT-FOR property for the SHELL.
   (let ((transient-for (contact-root-shell shell)))
     (if (eq transient-for shell)
-	(warn "Can't define TRANSIENT-FOR for root shell ~a." shell)		
+	(warn "Can't define TRANSIENT-FOR for root shell ~a." shell)
 	(setf (transient-for shell) transient-for))))
 
 (defun contact-root-shell (contact)
@@ -820,19 +802,19 @@ after the BODY."
 
 (defcontact top-level-shell (wm-shell)
   ((colormap-owners      :type     list
-			 :initform nil 
+			 :initform nil
 			 :accessor wm-colormap-owners)
-   
+
    (icon-title           :type     (or null string)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :wm-icon-title
 			 :accessor wm-icon-title))
-  
+
   (:resources
-    (wm-icon        :type (or null drawable))           
-    (wm-icon-mask   :type (or null pixmap))                
+    (wm-icon        :type (or null drawable))
+    (wm-icon-mask   :type (or null pixmap))
      wm-icon-title
-    (wm-icon-x      :type (or null int16))             
+    (wm-icon-x      :type (or null int16))
     (wm-icon-y      :type (or null int16)))
 
   (:documentation
@@ -930,7 +912,7 @@ after the BODY."
     (setf (wm-hints-icon-mask hints) value))
   (wm-update-hints shell)
   value)
- 
+
 
 (defmethod wm-icon-x ((shell top-level-shell))
   (with-slots (hints) shell
@@ -977,7 +959,7 @@ after the BODY."
 
 (defmethod realize :after ((shell top-level-shell))
   ;; Set initial property values
-  (wm-change-colormap-windows shell) 
+  (wm-change-colormap-windows shell)
   (wm-change-icon-name        shell))
 
 
@@ -993,18 +975,18 @@ after the BODY."
 
 (defcontact top-level-session (top-level-shell)
   ((client-host          :type     (or null string)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :sm-client-host
 			 :accessor sm-client-host)
 
    (command              :type     (or null string)
-			 :initform nil 
+			 :initform nil
 			 :initarg  :sm-command
 			 :accessor sm-command))
 
   (:resources
      sm-command)
-  
+
   (:documentation
     "Base class for top-level shells that communicate with a session manager."))
 
@@ -1075,15 +1057,15 @@ after the BODY."
 
 (defun shell-default-state ()
   (declare (special *new-shell*))		       ; Bound to shell by initialize-instance :around
-  
+
   ;; WARNING: We assume this function is called during (initialize-instance :after (basic-contact)).
   ;; Therefore, the parent slot still contains the owner and has not yet been reset to the root!
-  
+
   ;; Is this a root shell?
   (if (eq (contact-root *new-shell*) (contact-parent *new-shell*))
       ;; Yes...
       :mapped
-      
+
       ;; No...
       :withdrawn))
 
@@ -1107,22 +1089,22 @@ after the BODY."
   (setf (window-priority shell) :above))
 
 (defmethod (setf contact-state) (new-state (shell shell))
-  (check-type new-state (member :withdrawn :mapped))    
-  
+  (check-type new-state (member :withdrawn :mapped))
+
   (with-slots (parent display state) shell
     (unless (eq state new-state)
       (setf state new-state)
-      
+
       (if
 	(realized-p shell)
-	
+
 	(case new-state
 	  (:mapped    (shell-mapped shell)
-		      (map-window shell))	    	    
-	  
+		      (map-window shell))
+
 	  (:withdrawn (unmap-window shell)
 		      (shell-unmapped shell)))
-	
+
 	;; Not realized, let UPDATE-STATE do the work
 	(setf (display-update-flag display) t))))
   new-state)
@@ -1138,7 +1120,7 @@ after the BODY."
 (defmethod add-to-parent ((self shell))
   (with-slots (parent owner) self
     (let ((root (contact-root self)))
-      
+
       ;; Initialize shell owner
       (setf owner parent)
       (with-slots (shells) owner
@@ -1159,7 +1141,7 @@ after the BODY."
 (defmethod contact-resource-parent ((shell shell))
   (slot-value shell 'owner))
 
-(defmethod add-child :before ((shell shell) child &key)  
+(defmethod add-child :before ((shell shell) child &key)
   (with-slots (children) shell
     (when children
       (error "~s already has child ~s; cannot add child ~s."
@@ -1167,50 +1149,37 @@ after the BODY."
 	     (first children)
 	     child))))
 
-(defmethod manage-geometry ((parent shell) (child contact) x y width height border-width &key) 
-  (declare (type (or null int16) x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))  
-  
+(defmethod manage-geometry ((parent shell) (child contact) x y width height border-width &key)
   (let* ((child-bw     (or border-width (contact-border-width child)))
 	 (required-pos (- child-bw)))
-    
-    (with-slots ((parent-width width) (parent-height height)) parent 
+    (with-slots ((parent-width width) (parent-height height)) parent
       (multiple-value-bind (size-approved-p approved-width approved-height)
-	  
 	  (if (and (realized-p parent)
 		   (or (setf width  (unless (eq width  (contact-width child))  width))
 		       (setf height (unless (eq height (contact-height child)) height))))
-	      
 	      ;; Request corresponding change in top-level shell size
 	      ;; Since shell is top-level, changed size is effected immediately
 	      (values
 		(change-geometry parent :width width :height height)
 		parent-width
 		parent-height)
-	      
 	      ;; Unrealized shell approves and adopts change immediately
 	      (values
 		t
 		(setf parent-width  (or width  (contact-width child)))
 		(setf parent-height (or height (contact-height child)))))
-
 	;; Shell child always positioned so that its borders are invisible.
 	(values
 	  (and size-approved-p
 	       (or (null x) (= x required-pos))
-	       (or (null y) (= y required-pos)))    
+	       (or (null y) (= y required-pos)))
 	  required-pos
 	  required-pos
-	  approved-width   
+	  approved-width
 	  approved-height
 	  child-bw)))))
 
-
-(defmethod manage-priority ((parent shell) child priority sibling &key)  
-  (declare (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
+(defmethod manage-priority ((parent shell) child priority sibling &key)
   (declare (ignore child priority sibling))
   ;; Never approved since shell has only one child
   nil)
@@ -1224,24 +1193,23 @@ after the BODY."
 	     (content-width  (contact-width content))
 	     (content-height (contact-height content))
 	     (content-bw     (contact-border-width content)))
-	
+
 	(if (realized-p shell)
 	    ;; Negotiate with window mgr
 	    (change-geometry shell
 			     :width  content-width
 			     :height content-height)
-	    
+
 	    ;; Else change size of unrealized shell immediately
 	    (setf width  content-width
 		  height content-height))
-	
+
 	;; Position content to hide content border
 	(with-state (content)
 	  (move content (- content-bw) (- content-bw)))))))
 
-
 (defmethod resize :after ((shell shell) width height border-width)
-  (declare (ignore border-width)) 
+  (declare (ignore border-width))
   (with-slots (children) shell
     (let ((content (first children)))
       (when content
@@ -1249,21 +1217,14 @@ after the BODY."
 	(resize content width height
 		(contact-border-width content))))))
 
-
 (defmethod preferred-size ((shell shell) &key width height border-width)
   (declare (ignore border-width))
-
   (with-slots (children (current-width width) (current-height height)) shell
     (let ((content (first children)))
-      (multiple-value-bind (preferred-width preferred-height)	
+      (multiple-value-bind (preferred-width preferred-height)
 	  (if content
 	      ;; Return preferred size of content
 	      (preferred-size content :width width :height height)
-
 	      ;; Else accept suggested or current size
 	      (values (or width current-width) (or height current-height)))
-	
 	(values preferred-width preferred-height 0)))))
-
-
-
