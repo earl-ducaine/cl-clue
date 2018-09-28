@@ -17,25 +17,23 @@
   (pushnew :cleh *features*))
 
 (asdf:defsystem clue
-    :depends-on (clx)
-    :components
-    ((:file "clue" :depends-on("event-parse"))
-     (:file "package" :depends-on("event-parse"))
-     ;;  (:module clx-patch   ("clx-patch" "window-doc"))
-     (:file "defcontact" :depends-on("package"))
-     (:file "events" :depends-on("intrinsics" "event-parse"))
-     (:file "event-parse" :depends-on("defcontact"))
-     (:file "intrinsics" :depends-on("event-parse"))
-     (:module resource
-	      :pathname ""
-	      :depends-on("caches")
-	      :components
-	      (("resource"
-		"gray"
-		"cursor")))
-     (:file "root-gmgmt" :depends-on("shells"))
-     (:file "shells" :depends-on("intrinsics" "resource" "events"))
-     (:file "stream" :depends-on("intrinsics" "resource" "events"))
-     (:file "virtual" :depends-on("intrinsics" "resource" "events"))
-     (:file "caches" :depends-on("intrinsicts"))
-     (:file "obsolete" :depends-on("package"))))
+  :depends-on (clx closer-mop)
+  :components
+  ((:file "package")
+   (:file "defcontact" :depends-on("package"))
+   (:file "events" :depends-on("intrinsics" "event-parse"))
+   (:file "event-parse" :depends-on("defcontact"))
+   (:file "intrinsics" :depends-on("event-parse"))
+   (:module resource
+	    :pathname ""
+	    :depends-on("caches")
+	    :components
+	    ((:file "resource")
+	     (:file "gray")
+	     (:file "cursor")))
+   (:file "root-gmgmt" :depends-on("shells"))
+   (:file "shells" :depends-on("intrinsics" "resource" "events"))
+   (:file "stream" :depends-on("intrinsics" "resource" "events"))
+   (:file "virtual" :depends-on("intrinsics" "resource" "events"))
+   (:file "caches" :depends-on("intrinsics"))
+   (:file "obsolete" :depends-on("package"))))

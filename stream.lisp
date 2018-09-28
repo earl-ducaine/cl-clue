@@ -24,13 +24,13 @@
 ;;;  11/09/87   LGO	Created.
 ;;;  08/17/88	LGO	Added Common-Windows rubout-handler support
 ;;;  08/22/88   SLM     Display the text cursor position.
-;;;  08/23/88   SLM     Toggle solid and hollow text cursor when input focus 
-;;;  02/24/89	DNG	When using Explorer CLOS, enable instances of 
-;;;			interactive-stream to accept flavor messages from the 
+;;;  08/23/88   SLM     Toggle solid and hollow text cursor when input focus
+;;;  02/24/89	DNG	When using Explorer CLOS, enable instances of
+;;;			interactive-stream to accept flavor messages from the
 ;;;			system I/O functions.
 ;;;  02/28/89   KK      Updated for CLUE 1.16
-;;;  05/06/89	DNG	For the Explorer, update to use the stream generic functions 
-;;;			in the TICLOS package, and add support for the :READ-CURSORPOS and 
+;;;  05/06/89	DNG	For the Explorer, update to use the stream generic functions
+;;;			in the TICLOS package, and add support for the :READ-CURSORPOS and
 ;;;			:INCREMENT-CURSORPOS messages.
 ;;;  12/14/89   MAY	Added numerous fixes from myself and others.
 ;;;  02/12/90   MAY	More fixes for rubout-handler code.
@@ -47,43 +47,8 @@
 ;;;----------------------------------------------------------------------------+
 
 
+(in-package :cluei)
 
-(in-package "CLUEI")
-
-#+(and Explorer CLOS)
-(import '(ticlos:stream-clear-input
-	  ticlos:stream-unread-char
-	  ticlos:stream-listen
-	  ticlos:stream-read-char
-	  ticlos:stream-clear-output
-	  ticlos:stream-write-char
-	  ticlos:stream-write-string
-	  ticlos:stream-fresh-line
-	  ))
-(export '(interactive-stream
-	  stream-clear-input
-	  stream-unread-char
-	  stream-listen
-	  stream-peek-char
-	  stream-read-char
-	  stream-read-line
-	  set-cursorpos
-	  stream-clear-output
-	  stream-move-cursor
-	  stream-write-char
-	  clear-line
-	  clear-eol
-	  stream-write-string
-	  text-within-width
-	  stream-fresh-line
-	  draw-lozenged-string
-	  simple-rubout-handler
-	  with-input-editing
-	  rubout-handler
-	  get-rubout-handler-buffer
-	  force-input
-	  make-interactive-stream ;; may 12/14/89 
-	  ))
 
 (defcontact interactive-stream
 	    (contact #+(and Explorer CLOS) TICLOS:FUNDAMENTAL-CHARACTER-OUTPUT-STREAM
@@ -92,22 +57,22 @@
      :type     (or null gcontext)
      :initform nil
      :reader   stream-gcontext)
-   
+
    (font
      :type     font
      :reader   stream-font
      :initform 'fixed)
-   
+
    (cursor-x
      :initform 0
      :type     integer
      :reader   stream-cursor-x)
-   
+
    (cursor-y
      :initform 0
      :type     integer
      :reader   stream-cursor-y)
-   
+
    (line-height
      :initform 0
      :type     integer
@@ -126,7 +91,7 @@
    (unreadp
      :type     boolean
      :initform nil)		   ; True if a character was unread (already echoed)
-   
+
    ;; more-height:
    ;; When non-nil, then every time a new line is output, this is decremented by
    ;; LINE-HEIGHT.  When this is less than zero, MORE-PROCESSING is called.
@@ -136,11 +101,11 @@
      :initform t
      :type (or boolean card16)
      :accessor stream-more-height)
-   
+
    (rubout-handler-function
-     :initform 'simple-rubout-handler	
+     :initform 'simple-rubout-handler
      :accessor stream-rubout-handler-function)
-   
+
    (output-history-top
      :initform nil)		   ; Output history line at top of window
 
@@ -149,7 +114,7 @@
 
    (output-history-size
      :initform 100))
-  
+
   (:resources
     (background :initform :black)
     cursor-x
@@ -398,7 +363,7 @@ leaving the character in the buffer.  If no character is available, return NIL."
 ;; may 12/14/89 Created (for sn) Keeps output-history manageable and fixes
 ;; some more-processing bugs.
 (defmethod stream-new-line ((self interactive-stream))
-  (with-slots (cursor-x cursor-y line-height output-history 
+  (with-slots (cursor-x cursor-y line-height output-history
 			(contact-height height) more-height font) self
     ;; may 12/14/89 This method replaced form below in some places.
     (SETF CURSOR-X 0
@@ -424,20 +389,20 @@ leaving the character in the buffer.  If no character is available, return NIL."
 	       (minusp (decf more-height line-height)))
 	  (more-processing self))))
 
-;; may 12/14/89 (for sn)
-;; This fixes the extra cursor in col 0 since now using stream-new-line
-;; and bug with control-l when screen had line-wrap.
+;; This fixes the extra cursor in col 0 since now using
+;; stream-new-line and bug with control-l when screen had line-wrap.
 (defmethod stream-write-char ((self interactive-stream) character)
-  (when (integerp character)		   ;; Kludge for old zetalisp code
-    (setq character (lisp:int-char character)))
+  ;; Kludge for old zetalisp code
+  (when (integerp character)
+    (setq character (code-char character)))
   (with-slots ( cursor-x cursor-y (contact-width width) gcontext font
 	       output-history  tab-width lozenge-font) self
-    (draw-cursor self cursor-x cursor-y gcontext :erase-p t) 
+    (draw-cursor self cursor-x cursor-y gcontext :erase-p t)
     (if (graphic-char-p character)
 	(let ((width (char-width font (char-int character))))
 	  (when (> (+ cursor-x width) contact-width) ;; Wrap on wide lines
-	    (let ((*no-stream-history-p* t))	;; may 12/14/89 
-	      (stream-new-line self)))		;; may 12/14/89 
+	    (let ((*no-stream-history-p* t))	;; may 12/14/89
+	      (stream-new-line self)))		;; may 12/14/89
 	  (draw-glyph self gcontext cursor-x cursor-y (char-int character)
 		      :width width :size 8 :translate #'xlib::translate-default)
 	    (incf cursor-x width)
@@ -447,7 +412,7 @@ leaving the character in the buffer.  If no character is available, return NIL."
 	(case character
 	  (#\newline (stream-new-line self))
 	  (#\backspace (let ((width (char-width font (font-default-char font))))
-			 
+
 		  (setf cursor-x (max 0 (- cursor-x width))))
 		(unless *no-stream-history-p*
 		  (vector-push-extend character (car output-history))))
@@ -488,7 +453,7 @@ leaving the character in the buffer.  If no character is available, return NIL."
     (display-force-output (contact-display interactive-stream))
     (stream-read-char interactive-stream)
     (clear-line interactive-stream)))
-  
+
 (defun clear-line (interactive-stream)
   ;; Clear the current line
   (setf (slot-value (the interactive-stream interactive-stream) 'cursor-x) 0)
@@ -531,9 +496,9 @@ leaving the character in the buffer.  If no character is available, return NIL."
 			   string :start i :end new-end :width string-width))
 	(incf cursor-x string-width))
       (draw-cursor self cursor-x cursor-y gcontext)
-      ;; do special characters not printed	
+      ;; do special characters not printed
       (when index
-	(LET ((*no-stream-history-p* t))	;; may 12/14/89 
+	(LET ((*no-stream-history-p* t))	;; may 12/14/89
 	  (stream-write-char self (aref string index))
 	  (setf new-end (+ index 1))))))
   ;; Save history
@@ -582,18 +547,18 @@ leaving the character in the buffer.  If no character is available, return NIL."
 (defun draw-lozenged-string (window gcontext x0 y0 string font)
   "Display string inside a lozenge at X0 Y0."
   (declare (values right-coordinate bottom-coordinate))
-  (multiple-value-bind (width ascent descent)	;; may 12/14/89 
+  (multiple-value-bind (width ascent descent)	;; may 12/14/89
       (text-extents font string)
     (let* (;; Put some pixels to the top and bottom of the string and still stay inside lineheight.
-	   (lozenge-height (+ ascent descent))	;; may 12/14/89  
+	   (lozenge-height (+ ascent descent))	;; may 12/14/89
 	   (wid (+ lozenge-height width))
 	   (xpos (+ x0 (floor lozenge-height 2)))	;; may 12/14/89 was ceiling
-	   ;;(ypos (+ y0 descent))		;; may 12/14/89 
+	   ;;(ypos (+ y0 descent))		;; may 12/14/89
 	   )
       ;; Put the string then the box around it.
       (using-gcontext (gc :drawable (contact-root window) :default gcontext :font font)
 	(draw-glyphs window gc xpos
-		     y0 ;ypos ;; may 12/14/89 
+		     y0 ;ypos ;; may 12/14/89
 		     string))
       (draw-lozenge window gcontext wid lozenge-height x0 (- y0 ascent 1))	;; may 12/14/89 was 2
       (values wid lozenge-height))))
@@ -870,7 +835,7 @@ in *rhb* options - whichever is found first, if any."
 	  (setf (rhb-scan-pointer *rhb*) 0)	   ; number of characters sent to application
 
 	  ;; PROMPT option
-	  (prompt-if-any contact (getf options :prompt))	;; may 12/14/89 
+	  (prompt-if-any contact (getf options :prompt))	;; may 12/14/89
 
 	  ;; INITIAL-INPUT option
 	  (let ((initial-input (getf options :initial-input)))
@@ -945,7 +910,7 @@ in *rhb* options - whichever is found first, if any."
 ;; 6. Allowed BREAK/RESUME to work (mostly) - si:*use-old-break* t or nil
 ;; 7. added #\clear-screen
 ;; may 01/03/90 Added ctrl-y code. Fixed rubout on continuation line.
-;; 
+;;
 (defun simple-rubout-handler-edit (contact)
   ;; This is the "guts" of the rubout handler, where the editing occurs
   ;; This needs LOTS more editing commands!
@@ -955,13 +920,17 @@ in *rhb* options - whichever is found first, if any."
       (nil) ;; forever
     (setq ch (stream-read-char contact))
     (case ch
-      ((#\control-u #\control-U)				;CLEAR-INPUT flushes all buffered input
+      ;; We'll have to get this from xlib -- clear-input flushes all
+      ;; buffered input
+      ((control-u 'control-U)
        (setf (rhb-fill-pointer *rhb*) 0)
        (setq rubbed-out-some t)			;Will need to throw out
        (stream-write-char contact ch)		;Echo and advance to new line
        (stream-write-char contact #\Newline))
-      ((#\control-l #\control-L)				;Retype ALL visible area
-	 (display contact))	;; may 12/14/89
+      ;; We'll have to get this from xlib -- Retype all visible area
+      ((control-l 'control-L)				;
+       ;; may 12/14/89
+       (display contact))
       ;; may 12/14/89 Added
       #+ti
       ((#\clear-screen)						;Retype buffered input
@@ -976,7 +945,7 @@ in *rhb* options - whichever is found first, if any."
 	      (LAST-CHAR (AREF STRING (1- LEN)))
 	      (fill-pointer (rhb-fill-pointer *rhb*))
 	      (END (IF ;;(AND CHOP
-		     (OR (EQL LAST-CHAR #\RETURN) 
+		     (OR (EQL LAST-CHAR #\RETURN)
 			 (EQL LAST-CHAR #\SPACE)
 			 (EQL LAST-CHAR #\TAB)
 			 (EQL LAST-CHAR #\)))
@@ -1003,14 +972,14 @@ in *rhb* options - whichever is found first, if any."
 		  (new-y (stream-cursor-y contact))
 		  (new-x (cond ((OR (char= rub-ch #\newline)
 				    (AND (PLUSP (RHB-FILL-POINTER *RHB*)) 	;; Not at start of typein ..
-					 (ZEROP (STREAM-CURSOR-X CONTACT))))	;; ... but at start of a wrapped line.       
+					 (ZEROP (STREAM-CURSOR-X CONTACT))))	;; ... but at start of a wrapped line.
 				(SETQ new-y (MAX 0 (- new-y (stream-line-height contact))))
 				;; return new-x at end of previous line
 				(+ (text-width (stream-font contact)
-					       (rhb-buffer *rhb*) 
+					       (rhb-buffer *rhb*)
 					       :start 0 :end (rhb-fill-pointer *rhb*))
 				   (text-width (stream-font contact) (prompt-if-any nil))))
-			       ((graphic-char-p rub-ch)	;; may 12/14/89 
+			       ((graphic-char-p rub-ch)	;; may 12/14/89
 				(- (stream-cursor-x contact)
 				   (char-width (stream-font contact)
 					       (char-int rub-ch))))
@@ -1018,7 +987,7 @@ in *rhb* options - whichever is found first, if any."
 				(- (stream-cursor-x contact)
 				   (stream-tab-width contact)))
 			       (t (- (stream-cursor-x contact)
-				     (lozenge-width rub-ch (stream-lozenge-font contact)))))))	;; may 12/14/89 
+				     (lozenge-width rub-ch (stream-lozenge-font contact)))))))	;; may 12/14/89
 	     (set-cursorpos contact :x new-x :y new-y)
 	     (clear-eol contact)
 	     (setq rubbed-out-some t))
@@ -1026,7 +995,7 @@ in *rhb* options - whichever is found first, if any."
 	     (setf (rhb-scan-pointer *rhb*) 0)
 	     (throw 'rubout-handler t)))))
       (otherwise
-       (if (plusp (lisp:char-bits ch))
+       (if (plusp (char-code ch))
 	   (bell (contact-display contact)) ;; unknown command
 	 ;; Echo character
 	 #+ti
@@ -1054,7 +1023,7 @@ in *rhb* options - whichever is found first, if any."
 		  (return ch)))))))))
 
 ;; may 12/14/89 Added function documented in manual but never coded?
-(DEFUN cluei:make-interactive-stream (&rest keywords
+(defun cluei:make-interactive-stream (&rest keywords
 				&key (type 'interactive-stream)
 				&allow-other-keys)
   "Creates and returns an interactive-stream contact STREAM. The contact-display
@@ -1064,14 +1033,15 @@ stream to be created, and for XLIB:CREATE-WINDOW."
   ;; must have a :parent for make-contact
   (SETF (GETF keywords :parent)
 	(OR (GETF keywords :parent)
-	    ;; may 12/14/89 
+	    ;; may 12/14/89
 	    ;; This does not seem right ? How can we open a display - there may 12/14/89 a display
 	    ;; already opened. The doc in the manual says the display is created automatically.
 	    ;; I think the :parent had better be a display in the normal case!
 	    (open-contact-display
-	      'cluei:lisp-listener ;; this is (not?) used by resource database
-	      ;; for the width & height of the listener - this is the PARENT of the
-	      ;; listener ... 
+	     'lisp-listener
+	     ;; this is (not?) used by resource database
+	     ;; for the width & height of the listener - this is the PARENT of the
+	     ;; listener ...
 	      :authorization-data 	(GETF keywords :authorization-data)
 	      :authorization-name 	(GETF keywords :authorization-name)
 	      :class 			(GETF keywords :class)
@@ -1084,9 +1054,10 @@ stream to be created, and for XLIB:CREATE-WINDOW."
 	      :protocol 		(GETF keywords :protocol)
 	      :root-class 		(OR (GETF keywords :root-class) 'cluei:root)
 	      )))
-  (SETF (GETF keywords :name) (OR (GETF keywords :name) 'cluei:listener)) ;; used by resource database
+  ;; used by resource database
+  (SETF (GETF keywords :name)
+	(OR (GETF keywords :name) 'listener))
   (PROG1 (APPLY #'make-contact type keywords)
 	 ;; Realize it or else the :prompt rubout handler option will cause access
 	 ;; gcontext before :exposure when it is created by REALIZE .
-	 (update-state (GETF keywords :parent))
-	 ))
+	 (update-state (GETF keywords :parent))))

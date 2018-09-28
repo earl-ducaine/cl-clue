@@ -17,147 +17,26 @@
 ;;;
 
 
-(in-package "CLUEI")
+(in-package :cluei)
 
-(export '(display-root ;; Setf'able
-	  display-root-list
-	  display-multipress-delay-limit
-	  display-multipress-verify-p
-	  *default-host*
-	  *default-display*
-	  *default-multipress-delay-limit*
-	  *default-multipress-verify-p* 	  
+(pushnew :clue *features*)
 
-	  *parent*				; Bound during contact initialization
-	  open-contact-display
-	  
-	  basic-contact
-	  contact
-	  make-contact
-	  ;; Contact slots:
-	  display
-	  parent
-	  complete-name
-	  complete-class
-	  callbacks
-	  event-translations
-	  state
-	  sensitive
-	  compress-motion
-	  compress-exposures
-	  x y width height
-	  border-width
-	  background
-	  depth
-	  event-mask
-	  id
-	  plist
-	  
-	  ;; Contact slot accessors:
-	  contact-background
-	  contact-border-width
-	  contact-callbacks
-	  contact-compress-exposures
-	  contact-compress-motion
-	  contact-depth
-	  contact-display
-	  contact-event-mask
-	  contact-height
-	  contact-parent
-	  contact-sensitive
-	  contact-state
-	  contact-width
-	  contact-x
-	  contact-y
-	  
-	  composite
-	  children focus shells
-	  composite-children
-	  composite-focus
-	  composite-shells
-	  
-	  destroy
-	  
-	  contact-complete-name
-	  contact-complete-class
-	  contact-name
-	  display-name
-	  display-class
-;;	  find-contact
-	  ancestor-p
-	  realized-p
-	  destroyed-p
-	  mapped-p
-	  top-level-p
-	  managed-p
-	  sensitive-p
-	  event-mask  ;; Setf'able
-	  resource
-	  update-state
-	  initialize-geometry 
-	  present
-	  dismiss
-	  realize
-	  display
-	  refresh
-	  owns-focus-p
-	  inside-contact-p
+;; Exploit our knowlege of the gcontext implementation to set the
+;; display directly.  Shouldn't be needed sinnce we *can* create a
+;; default gcontext with the appropriate default display.
 
-	  add-callback
-	  apply-callback
-	  apply-callback-else
-	  callback-p
-	  delete-callback 
-	  
-	  root
-	  contact-root
-	  contact-screen
-	  contact-translate
-	  contact-top-level
+(defun gcontext-display (gcontext)
+  (slot-value gcontext 'xlib::display))
 
-	  read-character
-	  unread-character
-	  listen-character
-	  append-characters
-	  clear-characters
-	  
-	  add-child
-	  delete-child
-	  previous-sibling
-	  next-sibling
-	  change-priority
-	  manage-priority
-	  accept-focus-p
-	  move-focus
-	  change-layout
-	  while-changing-layout
-	  change-geometry
-	  preferred-size
-	  move
-	  resize
-	  manage-geometry
+(defun (setf gcontext-display) (value gcontext)
+  (setf (slot-value gcontext 'xlib::display) value))
 
-	  
-	  spring-loaded
-	  shadow-width
 
-	  contact-constraints
-	  contact-constraint
-	  class-constraints
-
-	  display-cursor
-	  contact-image-cursor
-	  contact-glyph-cursor
-	  ))
-
-(pushnew :CLUE *features*)
-
-;;;-----------------------------------------------------------------------------
 ;;; Extend the xlib:display object for CLUE slots
 
 (defmacro display-root-list (display)
   "Returns a list of root contacts in the order given by xlib:open-display."
-  `(the list (getf (display-plist ,display) 'root-list)))
+  `(getf (display-plist ,display) 'root-list))
 
 (defun display-root (display &optional number)
   "Returns the root of the display specified by the screen NUMBER."
@@ -189,9 +68,10 @@
   `(getf (display-plist ,display) 'update-flag))
 
 (defun display-mode-stack (display)
-  "Returns the mode-stack of the DISPLAY. The current input mode of a contact-display 
-is given by its mode-stack. The mode-stack is an alist containing entries of the form 
-(contact mode-type restrict-action . args)."
+  "Returns the mode-stack of the DISPLAY. The current input mode of a
+   contact-display is given by its mode-stack. The mode-stack is an
+   alist containing entries of the form (contact mode-type
+   restrict-action . args)."
   (getf (display-plist display) 'mode-stack))
 
 (defsetf display-mode-stack (display) (stack)
@@ -226,11 +106,9 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
   `(setf (getf (display-plist ,display) 'resource-class) ,class))
 
 
-;;;-----------------------------------------------------------------------------
-;;; CLUE applications call OPEN-CONTACT-DISPLAY to connect to an X server.
-;;; The object returned by OPEN-CONTACT-DISPLAY is a CLX DISPLAY object that also contains
+;;; Clue applications call open-contact-display to connect to an x server.
+;;; the object returned by open-contact-display is a clx display object that also contains
 ;;; the before and after event-handler lists, and the application keyboard buffer
-;;;-----------------------------------------------------------------------------
 
 (defvar *default-host* nil)
 (defvar *default-display* 0)
@@ -246,30 +124,27 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
 			          before-actions class (default-screen 0)
 				  display host protocol (root-class 'root))
   "Create and open a new contact-display."
-  (declare (type stringable application-name host)
-	   (type (or null integer) display)
-	   (type (or null (integer 0)) default-screen)
-	   (values contact-display))
   (declare (ignore protocol));; not included because of CLX bugs
-  
   (unless *default-host* ;; Set default if none defined
     (setq *default-host* host))
-  (let ((disp (open-display (or host *default-host*)
-		 :display (or display *default-display*)
-;;		 :protocol protocol ;; not included because of CLX bugs
-		 :authorization-name authorization-name
-		 :authorization-data authorization-data))
+  (let ((disp
+	 (cond
+	   ((and display host)
+	    (open-display  host
+			   :display display
+			   :authorization-name authorization-name
+			   :authorization-data authorization-data))
+	   (t
+	    (open-default-display))))
 	(display-class (or class application-name)))
-
     ;; Initialize resource name and class
     (setf (display-name disp)  application-name
 	  (display-class disp) display-class)
-    
     ;; Create a root contact for each screen of the display
     (let ((i 0)
 	  roots)
       (dolist (screen (display-roots disp))
-	(let ((name (intern (format nil "SCREEN-~d" i) 'keyword)))	  
+	(let ((name (intern (format nil "SCREEN-~d" i) 'keyword)))
 	  (push (make-contact
 		  root-class
 		  :display disp
@@ -280,126 +155,116 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
 		  :complete-class (list display-class root-class))
 		roots))
 	(incf i))
-
       ;; Initialize root list and default root
       (setf (display-root-list disp) (nreverse roots)
-	    (display-root disp)      (nth default-screen (display-root-list disp))))        
-    
+	    (display-root disp)      (nth default-screen (display-root-list disp))))
     ;; Function to call BEFORE event handling
     (setf (before-actions disp) before-actions)
-    
     ;; List of characters from the keyboard
     (setf (display-keyboard-buffer disp) nil)
-
     ;; Initialize multipress controls
     (setf (display-multipress-delay-limit disp) *default-multipress-delay-limit*
 	  (display-multipress-verify-p disp)    *default-multipress-verify-p*)
-    
     disp))
-
-
-;;;-----------------------------------------------------------------------------
-;;; Basic CONTACT class
 
 (defcontact basic-contact (xlib:window)
   ((display            :initarg :display
 		       :reader contact-display)
-   
+
    (parent             :initarg :parent
 		       :reader contact-parent)	       ; setf defined below
-   
+
    (name               :type symbol
 		       :initarg :name
 		       :initform :unnamed
 		       :reader contact-name)
-   
+
    (callbacks          :type list
 		       :reader contact-callbacks
 		       :initform nil)
-   
+
    (event-translations :type list
 		       :initform nil)
-   
+
    (event-mask         :type mask32
 		       :initform #.(make-event-mask :exposure)
 		       :reader   contact-event-mask)   ; setf defined below
-   
+
    (state              :initform :mapped
 		       :type (member :withdrawn :managed :mapped)
 		       :reader contact-state)	       ; setf defined below
-   
+
    (sensitive          :initform :on
 		       :type (member :off :on)
 		       :reader contact-sensitive)      ; setf defined below
-   
+
    (x                  :type int16
 		       :initform 0
 		       :reader contact-x)
-   
+
    (y                  :type int16
 		       :initform 0
 		       :reader contact-y)
-   
+
    (width              :type card16
 		       :initform 0
 		       :reader contact-width)
-   
+
    (height             :type card16
 		       :initform 0
 		       :reader contact-height)
-   
+
    (border-width       :type card16
 		       :initform 1
 		       :reader contact-border-width)
-   
+
    ;; Class allocated slots
    (compress-motion    :initform :on :type (member :off :on)
 		       :reader contact-compress-motion
 		       :allocation :class)
-   
+
    (compress-exposures :initform :off :type (member :off :on)
 		       :reader contact-compress-exposures
 		       :allocation :class
 		       ))
   (:documentation "Basic contact using parent's window")
   (:resources
-    (screen :type (or null card8))			;Selects screen when parent is a display
-    ;; Slots
-    name
-    callbacks
-    event-translations
-    event-mask
-    state
-    sensitive
-    x y width height border-width
-    ))
+   ;; Selects screen when parent is a display
+   (screen :type (or null card8))
+   name
+   callbacks
+   event-translations
+   event-mask
+   state
+   sensitive
+   x
+   y
+   width
+   height
+   border-width))
 
 (defcontact contact (basic-contact)
   ((background     :type     (or (member :none :parent-relative) pixel pixmap)
 		   :initform :parent-relative
-		   :reader   contact-background)       ; setf defined below
-   
+		   ;; setf defined below
+		   :reader   contact-background)
    (depth          :type     card16
 		   :initform 0
 		   :reader contact-depth)
-   
-   (initialization :type (or (member :destroy) list))  ; internal slot for window initialization and destruction
-   )
+   ;; internal slot for window initialization and destruction
+   (initialization :type (or (member :destroy) list)))
   (:documentation "Basic contact")
   (:resources
     (documentation     :type (or list string))
-
     ;; Slots
-    background 
-    depth 
-    
+    background
+    depth
     ;; Window attributes for create-window
     (backing-store     :type (or null (member :not-useful :when-mapped :always)))
     (border            :type (or null (member :copy) pixel pixmap))
     (cursor            :type (or null (member :none) cursor))
     (override-redirect :type (or null (member :on :off)))
     (save-under        :type (or null (member :on :off)))
-
     ;; These window attributes are NOT defined as resources, because it's not worth
     ;; the cost in initialization time.
     ;;    (backing-pixel :type (or null pixel))
@@ -412,7 +277,6 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
     ;;    (visual :type (or (member :copy) card29) :initform :copy)
     )
   (:documentation "The base class for all interactive objects in CLUE."))
-
 
 (defcontact composite (contact)
   ((children :initform nil
@@ -430,20 +294,12 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
   (:documentation "A basic CLUE contact with children"))
 
 
-
-;;;-----------------------------------------------------------------------------
-;;; UTILITY FUNCTIONS
+;;; Utility functions
 
 (defmethod print-object ((instance contact) stream)
   (let ((name (if (slot-boundp instance 'name)
 		  (contact-name instance)
 		  :uninitialized)))
-    #+lispm
-    (si:printing-random-object (instance stream)
-      (princ (class-name-of instance) stream)
-      (write-char #\space stream)
-      (princ name stream))
-    #-lispm
     (progn
       (write-string "#<" stream)
       (princ (class-name-of instance) stream)
@@ -458,12 +314,10 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
   (let ((result (if nconc-name
 		    (list (contact-name contact) nconc-name)
 		    (list (contact-name contact)))))
-    
     ;; Prepend names up to contact root
     (do ((parent (contact-resource-parent contact) (contact-resource-parent parent)))
 	((null parent))
       (push (contact-name parent) result))
-    
     ;; Prepend application name
     (push (display-name (contact-display contact)) result)
     result))
@@ -475,24 +329,22 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
   (let ((result (if nconc-class
 		    (list (class-name-of contact) nconc-class)
 		    (list (class-name-of contact)))))
-    
     ;; Prepend classes up to contact root
     (do ((parent (contact-resource-parent contact) (contact-resource-parent parent)))
 	((null parent))
       (push (class-name-of parent) result))
-    
     ;; Prepend application class
     (push (display-class (contact-display contact)) result)
     result))
-
 
 (defmethod contact-resource-parent ((contact contact))
   (slot-value contact 'parent))
 
 (defgeneric find-contact (parent &key name class)
-  (:documentation "Return contact with given NAME and CLASS in the hierarchy starting with PARENT.
-PARENT may be a contact or a contact-display. If a NAME or CLASS is not specified,
-it is ignored.")
+  (:documentation
+   "Return contact with given NAME and CLASS in the hierarchy starting
+    with PARENT.  PARENT may be a contact or a contact-display. If a
+    NAME or CLASS is not specified, it is ignored.")
   (declare (values (or null contact))))
 
 (flet
@@ -500,19 +352,16 @@ it is ignored.")
 	  (when (and (or (null name)  (eq name  (contact-name contact)))
 		     (or (null class) (eq class (class-name-of contact))))
 	    contact)))
-
   (defmethod find-contact ((parent display) &key name class)
     (some #'(lambda (contact) (find-contact contact :name name :class class))
 	   (display-root-list parent)))
-  
   (defmethod find-contact ((parent contact) &key name class)
     (test parent name class))
-  
   (defmethod find-contact ((parent composite) &key name class)
     (or (test parent name class)
 	(some #'(lambda (contact) (find-contact contact :name name :class class))
 	   (composite-children parent)))))
-	   
+
 (defun ancestor-p (child parent)
   "Returns T when CHILD is a descendant of PARENT"
   (do ((p (contact-parent child) (contact-parent p)))
@@ -530,7 +379,6 @@ it is ignored.")
 (defsetf destroyed-p (contact) (boolean)
   `(setf (getf (window-plist ,contact) :destroyed-p) ,boolean))
 
-(proclaim '(inline managed-p))
 (defun managed-p (contact)
   "Returns non-nil when contact is geometry managed by its parent"
   (NOT (EQ (contact-state contact) :withdrawn)))
@@ -543,7 +391,7 @@ it is ignored.")
   "Returns T when contact is viewable."
   (declare (type contact contact))
   (with-slots (parent state) (the contact contact)
-    (or (not parent)	
+    (or (not parent)
 	(and (realized-p contact)
 	     (eq :mapped state)
 	     (viewable-p parent)))))
@@ -564,11 +412,9 @@ it is ignored.")
   (with-slots (x y width height sensitive parent display) self
     (let ((old sensitive))
       (setf sensitive value)
-
       ;; Redisplay when changing sensitive
       (when (and (not (eq old value)) (viewable-p self))
 	(refresh self)
-
 	;; Give up focus if insensitive
 	(when (and (eq :off value) (owns-focus-p self))
 	  ;; Send focus to parent.
@@ -586,7 +432,7 @@ it is ignored.")
 	    :y y
 	    :width (or width (- (contact-width window) x))
 	    :height (or height (- (contact-height window) y)))))
-    (map-window transient-window)    
+    (map-window transient-window)
     (destroy-window transient-window)))
 
 (defmethod owns-focus-p ((contact contact))
@@ -620,7 +466,7 @@ it is ignored.")
 
 (defmethod (setf contact-event-mask) (mask (contact contact))
   (let ((mask (convert contact mask 'mask32)))
-    (assert mask nil "~s is not an EVENT-MASK.")    
+    (assert mask nil "~s is not an EVENT-MASK.")
     (when (realized-p contact)
       (setf (window-event-mask contact) mask))
     (with-slots (event-mask) contact
@@ -637,16 +483,11 @@ it is ignored.")
   (with-slots (background) contact
     (setf background new-value)))
 
-
-
-;;;-----------------------------------------------------------------------------
-;;; CONSTRAINT RESOURCES
-
+;;; Constraint resources
 
 (defmacro contact-constraints (contact)
   "Return the list of constraint resource values for the CONTACT."
   `(getf (window-plist ,contact) 'constraints))
-
 
 (defmacro contact-constraint (contact name)
   "Return the value of the constraint resource NAME for the CONTACT."
@@ -658,7 +499,6 @@ it is ignored.")
 		(:else
 		 `(intern (symbol-name ,name) 'keyword)))))
 
-
 (defun class-constraints (class &optional full-p)
   "Return the constraint resource specification list for the given CLASS.
 If FULL-P is true, then the full list is returned; otherwise, a list of names is returned."
@@ -667,10 +507,8 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	full-list
 	(mapcar #'first full-list))))
 
-
-;;;-----------------------------------------------------------------------------
-;;; Contact creation
 
+;;; Contact creation
 
 (defun make-contact (class-name &rest options)
   "Make a contact of type CLASS-NAME, initializing with OPTIONS or from the resource database.
@@ -699,16 +537,16 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	    ;; These must be given when creating a root.
 	    (getf initargs :complete-name)
 	    (getf initargs :complete-class)))
-    
+
     (assert (and complete-name complete-class)
 	    nil "No parent specified for new ~a." class-name)
-    
+
     (get-search-table *database* complete-name complete-class)))
 
 (defmethod initialize-instance :after ((self basic-contact)
 				       &rest initargs
 				       &key resource-table defaults
-				       &allow-other-keys)  
+				       &allow-other-keys)
   (with-slots (name display parent event-translations event-mask initialization callbacks) self
 
     ;; Initialize and save initial values for slot resources
@@ -720,7 +558,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
     ;; Save initial values for non-slot resources
     (let ((options (copy-list initargs)))
       ;; Allow resource-table to be GC'd
-      (remf options :resource-table)     
+      (remf options :resource-table)
       (setf initialization
 	    (nconc initialization options)))
 
@@ -730,11 +568,11 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	    (nconc initialization
 		   (setf (contact-constraints self)
 			 (initialize-constraints parent initargs resource-table)))))
-      
+
     ;; Initialize name to class name by default
     (when (eq name :unnamed)
       (setf name (class-name-of self)))
-    
+
     ;; Parse event-translations
     (setf event-translations
 	  (mapcar #'(lambda (et) (parse-event-translation (first et) (rest et)))
@@ -751,7 +589,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 
 (defmethod initialize-instance :after ((self contact) &rest initargs)
   (declare (type list initargs))
-  
+
   (with-slots (border-width) self
     ;; Validate initargs for window class
     (assert
@@ -816,7 +654,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
    functions exist, then execute and return the value(s) of the BODY forms."
   (let ((functions (gensym)))
     `(let ((,functions (callback-p ,contact ,name)))
-       
+
 	(if ,functions
 	  (catch :abort-callback
 	    (do (function) (())
@@ -826,7 +664,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 		(return
 		  ;; Return value(s) of last callback function
 		  (apply (first function) ,@args (rest function))))
-	      
+
 	      (apply (first function) ,@args (rest function))))
 
 	  ,@(when body
@@ -847,31 +685,31 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 
 (defmethod (setf contact-state) (state (contact contact))
   ;; Bound during contact realization to optimize initial mapping.
-  (declare (special *all-children-mapped-p*))	       
-  
+  (declare (special *all-children-mapped-p*))
+
   (check-type state (member :withdrawn :managed :mapped))
-  
+
   (let ((old-state (slot-value (the contact contact) 'state)))
     (unless (eq old-state state)
       (setf (slot-value (the contact contact) 'state) state)
       (if (realized-p contact)
 	  ;; When realized, change state immediately
-	  (progn 
+	  (progn
 	    (when (or (eq old-state :withdrawn)
 		      (eq state     :withdrawn))
 	      ;; Let parent react to transition to/from g.mgmt.
 	      (change-layout (contact-parent contact) contact))
-	    
+
 	    (if (eq state :mapped)
-		
+
 		;; Was unmapped, now mapped
 		(unless (and (boundp '*all-children-mapped-p*) *all-children-mapped-p*)
 		  (map-window contact))
-		
+
 		(when (eq old-state :mapped)
 		  ;; Was mapped, now unmapped
 		  (unmap-window contact))))
-	  
+
 	  ;; Not realized, let UPDATE-STATE do the work
 	  (setf (display-update-flag (contact-display contact)) t))))
   state)
@@ -882,37 +720,37 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	       (when (destroyed-p new-parent) new-parent))))
     (when c
       (error "~s is being destroyed." c)))
-  
+
   (with-slots (parent) contact
-    
+
     ;; Forestall any MATCH errors from reparent-window
-    (unless (eq (contact-screen new-parent) (contact-screen parent)) 
+    (unless (eq (contact-screen new-parent) (contact-screen parent))
       (error "New parent screen (~s) must be the same as old parent screen (~s)."
 	     (contact-screen new-parent) (contact-screen parent)))
-    (when (eq new-parent contact) 
+    (when (eq new-parent contact)
       (error "Cannot reparent ~s to itself." contact))
-    (when (ancestor-p new-parent contact) 
+    (when (ancestor-p new-parent contact)
       (error "New parent ~s is already a descendant of ~s." new-parent contact))
     (when (and (eq (contact-background contact) :parent-relative)
-	       (/= (contact-depth contact) (contact-depth new-parent))) 
+	       (/= (contact-depth contact) (contact-depth new-parent)))
       (error "New parent depth (~s) must be the same as contact depth (~s)."
 	     (contact-depth new-parent) (contact-depth contact)))
-    
+
     (let ((actual-state (contact-state contact))
 	  (new-x        (or x (contact-x contact)))
 	  (new-y        (or y (contact-y contact))))
-      
+
       ;; Unmap and unmanage until reparented
       (setf (contact-state contact) :withdrawn)
-      
+
       ;; Tell server to reparent window
       (reparent-window contact new-parent new-x new-y)
-      
+
       ;; Update contact hierarchy
       (delete-child parent contact)
       (setf parent new-parent)
       (add-child new-parent contact)
-      
+
       ;;Restore state
       (setf (contact-state contact) actual-state)))
 
@@ -925,10 +763,10 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 
 ;; Compatibility hack - remove soon
 (defun dismiss (contact &optional (unmanage-p t))
-  (if unmanage-p 
+  (if unmanage-p
       (setf (contact-state contact) :withdrawn)
     (setf (contact-state contact) :managed)))
-   
+
 (defun update-state (display)
   (when (display-update-flag display)
     (dolist (root (display-root-list display))
@@ -941,14 +779,12 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
     (if (dolist (child children)
 	  (when (and (not (realized-p child)) (managed-p child))
 	    (return t)))
-	
 	(progn
 	  (initialize-geometry composite)
 	  (dolist (child children)
 	    (when (and (not (realized-p child)) (managed-p child))
 	      (realize child)
 	      (realize-state child))))
-	
 	;; No unrealized children here, continue the search lower down
 	(dolist (child children)
 	  (when (realized-p child)
@@ -966,48 +802,36 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   contact ;; not used
   )
 
-
-
-(proclaim '(inline contact-event-translations-mask))
 (defun contact-event-translations-mask (contact)
   "Return the event mask from the event translations (class and instance) for CONTACT."
   (declare (values mask32))
   (with-slots (event-translations) (the basic-contact contact)
     (logior
-      ;; Instance translations    
+      ;; Instance translations
       (event-translations-mask event-translations)
-      
       ;; Class translations
       (class-name-event-mask (class-name-of contact)))))
 
-
-;;;-----------------------------------------------------------------------------
-;;; REALIZE - create the X window associated with a contact
-
+;; realize - create the x window associated with a contact
 (defmethod realize ((contact contact))
   "Create the window for CONTACT. This function should not be called
    by application programs."
-  
   (with-slots
-    (    
+    (
      background border-width depth event-mask
      height initialization parent width x y
      )
     contact
-
     ;; Ensure the parent is realized
     (assert
       (realized-p parent) ()
       "Parent of ~s is not realized." contact)
-
     ;; Ensure width/height initialized
     (assert
       (and (plusp width) (plusp height)) ()
       "Width and height have not been initialized for ~s" contact)
-
     ;; Calculate event-mask
     (setf event-mask (contact-event-translations-mask contact))
-
     (let ((input-only-p (eq :input-only (getf initialization :class))))
       ;; Create the contact window
       (apply
@@ -1024,27 +848,23 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	:depth            depth
 	:allow-other-keys t
 	initialization)
-      
-      
       ;; Record depth, if inherited from parent
       (unless (or (plusp depth) input-only-p)
 	(setf depth (contact-depth parent))))
-
     (let* ((documentation (getf initialization :documentation)))
       (when documentation
 	(setf (window-documentation contact) documentation)))
-
 ;; Keep initialiation around for awhile, it's useful for debugging
-;;    (setf initialization nil) ;; Give initialization list to the garbage collector
+;;  (setf initialization nil) ;; Give initialization list to the garbage collector
     ))
 
 (defmethod realize :after ((contact composite))
   ;; Default focus from the :focus-name initialization
-  (with-slots (initialization focus) contact 
+  (with-slots (initialization focus) contact
     (let ((focus-name (getf initialization :focus-name)))
       (when (and focus-name (not focus))
 	(setf focus (find-contact contact :name focus-name)))))
-  
+
   ;; Map children here, to ensure the composite is mapped AFTER its children
   ;; This eliminates the screen flash that would happen if children were
   ;; mapped on top of a visible parent.
@@ -1054,14 +874,14 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 	     (unless (mapped-p child)
 	       (return nil)))))
     (declare (special *all-children-mapped-p*))
-    
+
     ;; Recursively realize all managed children of COMPOSITE
     ;; Note: by definition, all children are unrealized
     (dolist (child children)
       (when (managed-p child)
 	(realize child)
 	(realize-state child)))
-    
+
     ;; Map all children at once, if possible
     (when *all-children-mapped-p*
       (map-subwindows contact)))
@@ -1084,14 +904,14 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   (let ((newly-managed 0) new-child)
 
     ;; Recursively descend to initialize-geometry for all unrealized managed children
-    (dolist (child (composite-children composite))            
+    (dolist (child (composite-children composite))
       (when (and (not (realized-p child)) (managed-p child))
 	(setf new-child child)
 	(incf newly-managed)
 	(initialize-geometry child)))
 
     ;; Optimization: don't bother to change layout unless necessary
-    (when new-child      
+    (when new-child
       (change-layout
 	composite
 	(unless (> newly-managed 1) new-child)))))
@@ -1106,7 +926,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
     (when old-state
       ;; Problem:  This is a special case because the value of state slot after
       ;;           initialization is not yet in effect and doesn't reflect reality.
-      ;; Solution: Temporarily set initial value of state slot to reality (i.e. old-state)     
+      ;; Solution: Temporarily set initial value of state slot to reality (i.e. old-state)
       ;;           so that (setf contact-state) will take effect correctly.
       (setf (slot-value (the contact contact) 'state) old-state)
       (setf (contact-state contact) new-state))))
@@ -1134,35 +954,35 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   "Destroy the CONTACT."
   (when (and (not (destroyed-p contact))	; only destroy once
 	     (contact-parent contact))		; don't destroy root
-    
+
     ;; Unmanage the contact (parent's change-layout is called)
     (setf (contact-state contact) :withdrawn)
-    
+
     (when (realized-p contact)
       ;; Select for :structure-notify to receive :destroy-notify events
       (setf (window-event-mask contact) #.(make-event-mask :structure-notify))
-      
+
       ;; Destroy the contact's window subtree
       (xlib:destroy-window contact))
-    
+
     ;; Destroy other server resources and intrinsics hooks associated with contact
     (map-over-children contact #'destroy-cleanup)
-    
+
     ;; Delete contact from its parent's child list
     (delete-child (contact-parent contact) contact)))
 
 (defun destroy-cleanup (contact)
   "Perform side-effects of destroying the CONTACT."
-  
+
   ;; Mark contact destroyed
   (setf (destroyed-p contact) t)
-  
+
   ;; Remove contact's timers
   (delete-timer contact)
-  
+
   ;; Ensure modes are popped
   (delete-mode contact)
-  
+
   ;; Destroy a composite's shells
   (when (typep contact 'composite)
     (dolist (shell (slot-value (the composite contact) 'shells))
@@ -1198,7 +1018,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
    (border-width :initform 0)
    (depth        :initform 0)
    (background   :initform :none))
-  
+
   (:resources
     ;; Remove all inherited resources that cannot actually be changed by user
     (background            :remove t)
@@ -1225,7 +1045,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   (with-slots
     (display screen (id xlib::id) x y width height border-width depth initialization)
     self
-    
+
     ;; A root contact represents a root window
     (setf
       id             (window-id (screen-root screen))
@@ -1236,7 +1056,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
       height         (screen-height screen)
       border-width   0
       depth          (screen-root-depth screen))
-    
+
     ;; Update CLX resource id lookup to associate root id with root contact
     (xlib::save-id display id self)))
 
@@ -1259,7 +1079,7 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
     (setf contact (contact-parent contact))))
 
 (defun contact-translate (from from-x from-y &optional to)
-  "Translate the position given by FROM-X and FROM-Y relative to the FROM contact 
+  "Translate the position given by FROM-X and FROM-Y relative to the FROM contact
 into a position relative to the TO contact. By default, TO is (contact-root FROM).
 If FROM and TO are on different screens, then nil is returned."
   (declare (values to-x to-y))
@@ -1273,7 +1093,7 @@ If FROM and TO are on different screens, then nil is returned."
 
       ;; Translate to root coordinate system
       (do* ((to-x   from-x)
-            (to-y   from-y) 
+            (to-y   from-y)
             (from   from                        parent)
             (bw     (contact-border-width from) (contact-border-width from))
             (parent (contact-parent from)       (contact-parent from)))
@@ -1381,7 +1201,7 @@ If FROM and TO are on different screens, then nil is returned."
 (defconstant *default-contact-height* 16)
 (defconstant *default-contact-width* 16)
 
-(defmethod manage-geometry ((parent composite) (contact contact) x y width height border-width &key)  
+(defmethod manage-geometry ((parent composite) (contact contact) x y width height border-width &key)
   (declare (type (or null int16) x y)
 	   (type (or null card16) width height border-width)
 	   (values success-p x y width height border-width))
@@ -1400,13 +1220,13 @@ If FROM and TO are on different screens, then nil is returned."
 	   (acceptable-height (if (zerop requested-height)
 				  *default-contact-height*
 				  requested-height)))
-      
+
       (values (and (= requested-width acceptable-width)
 		   (= requested-height acceptable-height))
 	      (or x contact-x)
 	      (or y contact-y)
 	      acceptable-width
-	      acceptable-height	    
+	      acceptable-height
 	      (or border-width contact-border-width)))))
 
 
@@ -1419,10 +1239,10 @@ If FROM and TO are on different screens, then nil is returned."
 
   ;; Approve immediately?
   (if (and (realized-p parent) (realized-p contact) (managed-p contact))
-      
+
       ;; No, do full policy check.
       (call-next-method)
-      
+
       ;; Yes, just return requested or current values.
       (with-slots ((contact-x x)
 		   (contact-y y)
@@ -1476,7 +1296,7 @@ If FROM and TO are on different screens, then nil is returned."
 (defun change-priority (contact priority &key sibling accept-p)
   "Request stacking order change for CONTACT. The first value returned indicates
    if the request was approved and performed. If nil, then the request was not
-   approved, and the remaining values specify an acceptable compromise change. 
+   approved, and the remaining values specify an acceptable compromise change.
    If ACCEPT-P, then any compromise request is performed immediately."
   (declare (type contact           contact)
 	   (type (member :above :below :top-if :bottom-if :opposite) priority)
@@ -1487,7 +1307,7 @@ If FROM and TO are on different screens, then nil is returned."
   (when (and (realized-p contact) (not (destroyed-p contact)))
     (with-slots (parent) contact
       (assert parent () "Cannot change the priority of a root.")
-      
+
       (multiple-value-bind (success-p new-priority new-sibling)
 	  (if (and (managed-p contact) (realized-p parent))
 	      ;; Ask for approval from parent
@@ -1495,23 +1315,23 @@ If FROM and TO are on different screens, then nil is returned."
 
 	      ;; Else approve immediately.
 	      (values t priority sibling))
-      
+
 	(when (or success-p			       ; Approved or...
 		  (and accept-p new-priority))	       ; Compromise exists and is acceptable
-	  
+
 	  ;; Get after-effect function, if any.
 	  (let ((after-effect (or success-p
 				  (manage-priority parent contact new-priority new-sibling))))
 	    (assert after-effect ()
 		    "MANAGE-PRIORITY for ~a failed to accept its own compromise priority." parent)
-	      
+
 	    ;; Perform approved change
 	    (setf (contact-priority contact new-sibling) new-priority)
-	    
+
 	    ;; Perform after-effect
 	    (when (and (functionp after-effect) (not (composite-changing-layout-p parent)))
 	      (funcall after-effect parent))))
-      
+
 	(values success-p new-priority new-sibling)))))
 
 (defmethod manage-priority ((self composite) contact priority sibling &key)
@@ -1542,7 +1362,7 @@ If FROM and TO are on different screens, then nil is returned."
 
   (let* ((start (or start (composite-focus composite)))
 	 (focus (or start (first (composite-children composite)))))
-    
+
     (when focus ;; focus nil when composite has no children
       (assert (member focus (composite-children composite) :test #'eq) ()
 	      "~s isn't a child of ~s" focus composite)
@@ -1550,14 +1370,14 @@ If FROM and TO are on different screens, then nil is returned."
 	(setf focus
 	      (if (eq :set direction)
 		  ;; Ensure requested focus is ready to accept
-		  (when (accept-focus-p focus) focus)		  
+		  (when (accept-focus-p focus) focus)
 
 		  ;; Else look for next focus ready to accept
 		  (do* ((get-sibling (ecase direction (:next 'next-sibling) (:previous 'previous-sibling)))
-			(focus       (funcall get-sibling focus) (funcall get-sibling focus)))		       
+			(focus       (funcall get-sibling focus) (funcall get-sibling focus)))
 		       ((or (not focus) (eq focus start)))
 		    (when (accept-focus-p focus) (return focus)))))
-	
+
 	;; Tell server to change input focus
 	(set-input-focus (contact-display focus) focus (or revert-to :parent)))
 
@@ -1580,15 +1400,15 @@ If FROM and TO are on different screens, then nil is returned."
 (defun change-geometry (contact &key x y width height border-width accept-p)
   "Request geometry change for CONTACT. The first value returned indicates
    if the request was approved and performed. If nil, then the request was not
-   approved, and the remaining values specify an acceptable compromise change. 
+   approved, and the remaining values specify an acceptable compromise change.
    If ACCEPT-P, then any compromise request is performed immediately."
-  
+
   (declare (type contact          contact)
 	   (type (or null int16)  x y)
 	   (type (or null card16) width height border-width)
 	   (type boolean          accept-p)
 	   (values success-p x y width height border-width))
-  
+
   (unless (destroyed-p contact)
     (with-slots
       ((contact-x            x)
@@ -1598,22 +1418,22 @@ If FROM and TO are on different screens, then nil is returned."
        (contact-border-width border-width)
        (contact-parent       parent))
       (the basic-contact contact)
-      
+
       (assert contact-parent () "Cannot change the geometry of a root.")
-      
+
       (multiple-value-bind
 	(success-p approved-x approved-y approved-width approved-height approved-border-width)
 	  (manage-geometry contact-parent contact x y width height border-width)
-	
+
 	(when (and
 		(or success-p			; Approved or...
-		    (and accept-p approved-x))	; Compromise exists and is acceptable, and ... 
-		
+		    (and accept-p approved-x))	; Compromise exists and is acceptable, and ...
+
 		(or				; Not already done by window mgr...
 		  (slot-value contact-parent 'parent)	;   (i.e. either non-top-level or unrealized.)
 		  (not (realized-p contact))))	;   (See manage-geometry for root)
-	  
-	  ;; Perform approved change 
+
+	  ;; Perform approved change
 	  (let
 	    ;; Get after-effect function, if any.
 	    ((after-effect (or success-p
@@ -1625,7 +1445,7 @@ If FROM and TO are on different screens, then nil is returned."
 	      after-effect ()
 	      "MANAGE-GEOMETRY for ~a failed to accept its own compromise geometry."
 	      contact-parent)
-	    
+
 	    ;; Change contact geometry.
 	    (when
 	      ;; Perform after-effect if...
@@ -1633,19 +1453,19 @@ If FROM and TO are on different screens, then nil is returned."
 		;; Something actually changed...
 		(let ((moved-p (move contact approved-x approved-y))
 		      (sized-p (resize contact approved-width approved-height approved-border-width)))
-		  (or moved-p sized-p)) 
-		
+		  (or moved-p sized-p))
+
 		;; and after-effect function returned...
 		(functionp after-effect)
-		
+
 		;; and not in the middle of a batch of layout changes...
 		(or (not (composite-changing-layout-p contact-parent))
-		    
-		    ;; Remember that after-effect was postponed.  
+
+		    ;; Remember that after-effect was postponed.
 		    (not (setf (composite-changing-layout-p  contact-parent) :changed))))
-	      
+
 	      (funcall after-effect contact-parent))))
-	
+
 	;; Return result of geometry mgmt.
 	(values (when success-p t)
 		approved-x approved-y
@@ -1678,7 +1498,7 @@ already performed by the user/wm."
       (when position-changed-p
 	(call-next-method))
       position-changed-p)))
-  
+
 (defmethod resize ((contact contact) width height border-width)
   "Change the size of CONTACT."
   (with-slots ((contact-width width)
@@ -1697,7 +1517,7 @@ already performed by the user/wm."
     (setf contact-height height)
     (setf contact-border-width border-width)))
 
-(defmethod resize :around ((contact contact) width height border-width) 
+(defmethod resize :around ((contact contact) width height border-width)
   ;; Skip primary and auxiliary methods if no change.
   (with-slots
     ((contact-width        width)
@@ -1711,4 +1531,3 @@ already performed by the user/wm."
       (when size-changed-p
 	(call-next-method))
       size-changed-p)))
-

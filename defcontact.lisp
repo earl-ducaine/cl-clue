@@ -59,7 +59,7 @@
 ;;; Contact Definition                               |
 
 (defmacro defcontact (class superclass-names variables &rest options)
-  "Defines a contact CLASS."
+  "Defines a contact class."
   (let (resources documentation constraints)
     ;; Normalize slot variables
     (setq variables
@@ -80,39 +80,39 @@
 	  (define-contact-resources class superclass-names variables resources))
     (setf variables
 	  (mapcar
-	    #'(lambda (var)
-		;; Fill in :initform and :initarg for slot resources
-		(let* ((name     (intern (symbol-name (car var)) 'keyword))
-		       (initarg  (getf (cdr var) :initarg))
-		       (type     (getf (cdr var) :type))
-		       (resource (assoc name resources :test #'eq)))
-		  (when resource
-		    (unless initarg
-		      ;; Variables that show up in the resources list need :initarg's
-		      (setf var `(,@var :initarg ,(or initarg name))))
-		    ;; Save slot :initform in resource spec, if necessary.
-		    (unless (getf (cdr resource) :initform)
-		      (setf (getf (cdr resource) :initform)
-			    (getf (cdr var) :initform)))
-		    ;; Set the slot :initform to nil so that resource values from the
-		    ;; database will supersede (see define-initialize-resource-slots)
-		    (setf (getf (cdr var) :initform) nil)
-		    (when type
-		      ;; Adjust type so that nil :initform is valid
-		      (setf (getf (cdr var) :type) `(or null ,type)))))
-		var)
-	    variables))
+	   #'(lambda (var)
+	       ;; Fill in :initform and :initarg for slot resources
+	       (let* ((name     (intern (symbol-name (car var)) 'keyword))
+		      (initarg  (getf (cdr var) :initarg))
+		      (type     (getf (cdr var) :type))
+		      (resource (assoc name resources :test #'eq)))
+		 (when resource
+		   (unless initarg
+		     ;; Variables that show up in the resources list need :initarg's
+		     (setf var `(,@var :initarg ,(or initarg name))))
+		   ;; Save slot :initform in resource spec, if necessary.
+		   (unless (getf (cdr resource) :initform)
+		     (setf (getf (cdr resource) :initform)
+			   (getf (cdr var) :initform)))
+		   ;; Set the slot :initform to nil so that resource values from the
+		   ;; database will supersede (see define-initialize-resource-slots)
+		   (setf (getf (cdr var) :initform) nil)
+		   (when type
+		     ;; Adjust type so that nil :initform is valid
+		     (setf (getf (cdr var) :type) `(or null ,type)))))
+	       var)
+	   variables))
     ;; Expand definition
     `(progn
-       (eval-when (compile load eval)
+       (eval-when (:execute :load-toplevel :compile-toplevel)
 	 ;; Update contact class properties
 	 (setf
-	   (class-name-event-precedence-list ',class) nil
-	   (class-name-event-mask ',class)            nil
-	   (class-name-direct-superclasses ',class)   ',superclass-names
-	   (clue-resources ',class)                   ',resources)
+	  (class-name-event-precedence-list ',class) nil
+	  (class-name-event-mask ',class)            nil
+	  (class-name-direct-superclasses ',class)   ',superclass-names
+	  (clue-resources ',class)                   ',resources)
 	 ,(when constraints
-	     `(setf (clue-constraints ',class)        ',constraints)))
+	    `(setf (clue-constraints ',class)        ',constraints)))
        ;; Define contact class
        (defclass ,class ,superclass-names
 	 ,variables
@@ -290,19 +290,19 @@
     (when (dolist (resource resources code)
 	    (when (setq slot (getf (cdr resource) :slot))
 	      (push
-		(set-resource-slot (car resource) resources slot)
-		code)))
+	       (set-resource-slot (car resource) resources slot)
+	       code)))
 
-    `(defmethod initialize-resource-slots ((instance ,contact-class) resource-table app-defaults)
+      `(defmethod initialize-resource-slots ((instance ,contact-class) resource-table app-defaults)
 
-       ;; Check resource types and fill in defaults.
-       ;; Assumes the :initform for all resource slots NIL (the true initform is evaluated here).
-       (let (options (parent (slot-value (the ,contact-class instance) 'parent)))
+	 ;; Check resource types and fill in defaults.
+	 ;; Assumes the :initform for all resource slots NIL (the true initform is evaluated here).
+	 (let (options (parent (slot-value (the ,contact-class instance) 'parent)))
 
-	 ;; NOTE: PARENT is null when contact-class is ROOT.
-	 ;; This may lose for some root resources requiring conversion.
-	 ,@code
-	 options)))))
+	   ;; NOTE: PARENT is null when contact-class is ROOT.
+	   ;; This may lose for some root resources requiring conversion.
+	   ,@code
+	   options)))))
 
 (defun define-initialize-constraints (composite-class constraints)
   "Define the initialize-constraints method for COMPOSITE-CLASS."
@@ -310,8 +310,8 @@
     (let (code)
       (when (dolist (constraint constraints code)
 	      (push
-		(push-constraint (car constraint) constraints)
-		code))
+	       (push-constraint (car constraint) constraints)
+	       code))
 
 	`(defmethod initialize-constraints ((parent ,composite-class) initargs resource-table)
 	   (let (options (app-defaults (getf initargs :defaults)))
@@ -332,8 +332,8 @@
     (when (dolist (resource resources code)
 	    (unless (getf (cdr resource) :slot)
 	      (push
-		(push-resource (car resource) resources)
-		code)))
+	       (push-resource (car resource) resources)
+	       code)))
       `(defmethod default-options ((class (eql ',contact-class)) initargs)
 	 (let ((options      (copy-list initargs))
 	       (app-defaults (getf initargs :defaults))
@@ -368,13 +368,13 @@
 			      ,(getf resource :initform)))
 	      (no-convert-p ,(if type `(and value (typep value ',type)) t)))
 	 (and value
-		(not (and initarg-p no-convert-p))
-		(setf options
-		      (list* ',name
-			     (if no-convert-p
-				 value
-				 ,(when type `(do-convert parent value ',type)))
-			     options)))))))
+	      (not (and initarg-p no-convert-p))
+	      (setf options
+		    (list* ',name
+			   (if no-convert-p
+			       value
+			       ,(when type `(do-convert parent value ',type)))
+			   options)))))))
 
 
 (defun push-constraint (name constraints)

@@ -14,25 +14,16 @@
 ;;;
 ;;; Texas Instruments Incorporated provides this software "as is" without
 ;;; express or implied warranty.
-;;;
 
 
-(in-package "CLUEI")
+(in-package :cluei)
 
-(export '(
-	 check-function
-	 )
-	"CLUEI")
-
-
-
-;;;-----------------------------------------------------------------------------
-;;; EVENT-PARSING
+;; Event-parsing
 
 ;; In X, there are event-NAMEs, which are used to specify which events are desired,
 ;; and event-KEYs, which are the names of specific events.  This ALIST maps
 ;; event-KEYs to event-MASK's.  This is used for automagicly creating the
-;; event-name mask for window creation from the list of event-keys a contact is 
+;; event-name mask for window creation from the list of event-keys a contact is
 ;; interested in.  If a third alist element is present, its a function to call
 ;; to compute the event-mask from the match parameters.
 
@@ -53,7 +44,7 @@
     (:leave-notify       #.(make-event-mask :leave-window))
     (:key-press          #.(make-event-mask :key-press))
     (:key-release        #.(make-event-mask :key-release))
-    (:focus-in           #.(make-event-mask :focus-change)) 
+    (:focus-in           #.(make-event-mask :focus-change))
     (:focus-out          #.(make-event-mask :focus-change))
     (:timer)
     (:property-notify    #.(make-event-mask :property-change))
@@ -73,7 +64,7 @@
     (:resize-request     #.(make-event-mask :resize-redirect))
     (:configure-request) ; substructure-notify on parent
     (:circulate-notify   #.(make-event-mask :structure-notify))  ; or substructure-notify on parent
-    (:circulate-request) ; substructure-notify on parent    
+    (:circulate-request) ; substructure-notify on parent
     (:selection-clear)
     (:selection-request)
     (:selection-notify)
@@ -91,7 +82,7 @@
 (defun parse-event-translation (event-spec actions)
   "Return a canonical form of an event translation."
   (declare (values list))
-  
+
   (cons
     (typecase event-spec
       (list
@@ -100,47 +91,47 @@
 	 (assert checker nil "No check function defined for ~s." key)
 	 (multiple-value-bind (args real-key) (apply checker event-spec)
 	   (cons (or real-key key) args))))
-      
+
       (character
        (cons :key-press (key-check :key-press event-spec)))
-      
+
       (otherwise
        (unless (assoc event-spec *event-mask-alist* :test #'eq)
 	 (error "~s is not a known event keyword." event-spec))
        event-spec))
-    
+
     actions))
 
 
 (proclaim '(inline event-translations-mask))
 (defun event-translations-mask (translations &optional (initial-mask 0))
-  "Return the bitwise-or of the INITIAL-MASK and the event mask 
+  "Return the bitwise-or of the INITIAL-MASK and the event mask
 specified by the given event TRANSLATIONS."
   (reduce #'event-translation-mask translations :initial-value initial-mask))
 
 (defun event-translation-mask (initial-mask translation)
-  "Return the bitwise-or of the INITIAL-MASK and the event mask 
+  "Return the bitwise-or of the INITIAL-MASK and the event mask
 specified by the given event TRANSLATION."
   (logior
     initial-mask
-    
+
     ;; Compute mask needed for this translation.
     (multiple-value-bind (event-key event-spec-args)
 	(let ((event-spec  (first translation)))
 	  (if (consp event-spec)
 	      (values (first event-spec) (cddr event-spec))
 	      event-spec))
-      
+
       ;; Get event mask and filter function for the event keyword.
       (let* ((mask-spec   (rest (assoc event-key *event-mask-alist* :test #'eq)))
 	     (mask        (first mask-spec))
 	     (mask-filter (second mask-spec)))
-	(cond	   
+	(cond
 	  ((null mask) 0)				 ; Return empty mask
-	  
+
 	  ((not (and mask-filter event-spec-args))	 ; Return mask for event-key
 	   mask)
-	  
+
 	  (t (apply mask-filter event-spec-args))	 ; Return mask for event-spec
 	  )))))
 
@@ -164,7 +155,7 @@ specified by the given event TRANSLATION."
   "Return the event mask shared by all instances of CLASS-NAME."
   (or
     (get class-name 'event-mask)
-    
+
     (setf
       (class-name-event-mask class-name)
 
@@ -175,21 +166,20 @@ specified by the given event TRANSLATION."
 	   ;; the event mask specified by the class event translations of
 	   ;; all the CLASSES.
 	   (if classes
-	       
+
 	       (class-event-translations-mask
 		 (rest classes)
 		 (event-translations-mask
 		   (class-name-event-translations (first classes))
 		   mask))
-	       
+
 	       mask)))
 
 	(class-event-translations-mask
 	  (class-name-event-precedence-list class-name)
 
-	  ;; Initial event mask is most specific class resource initform.	  
+	  ;; Initial event mask is most specific class resource initform.
 	  (dolist (class (class-name-precedence-list class-name) 0)
 	    (let ((init-mask (getf (rest (assoc :event-mask (clue-resources class))) :initform)))
 	      (when init-mask
 		(return init-mask)))))))))
-

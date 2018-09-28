@@ -1,0 +1,10 @@
+
+
+*.log
+*.aux
+*.lof
+*.toc
+
+doc/*.idx
+doc/*.toc
+

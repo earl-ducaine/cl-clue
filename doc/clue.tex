@@ -342,7 +342,7 @@ interface object types, creating interface
 objects, and using them to control the dialog between the application and its
 human user.  
 %
-\LOWER{Goals}
+\section{Goals}
 {\bf Portable}
 \begin{quote}
 Applications which use CLUE should be easily portable to any hardware/software
@@ -397,8 +397,8 @@ being considered by ANSI for a proposed national standard for display
 management.}
 %
 %
-\SAME{Overview}
-\LOWER{Contacts}
+\section{Overview}
+\subsection{Contacts}
 %
 In CLUE, the basis for programming the user interface of an application
 program is object-oriented programming --- creating objects called
@@ -452,7 +452,7 @@ drop-shadow-pop-up-menu subclass). This is expected to lead to the development
 of contact ``libraries'', providing a rich repertoire of interface
 techniques and a choice of several functionally-interchangeable styles.
 
-\SAMEL{The User Interface Programming System}{ch:uips}
+\subsection{The User Interface Programming System}{ch:uips}
 
 As defined by CLUE, contact objects represent an intermediate level of
 abstraction within a larger user interface programming system.
@@ -501,8 +501,8 @@ the presentation (or lexical) component of a user interface.
 \index{user interface, lexical component}
 \index{UIMS, presentation component}
 
-\HIGHER{Summary of Features}
-\LOWER{Contacts, Composites, and Interactive Streams}
+\section{Summary of Features}
+\subsection{Contacts, Composites, and Interactive Streams}
 CLUE defines the basic class of  {\bf contact} objects, the fundamental
 components of a user interface. \index{contact}
 Contacts are a subclass of the CLX {\tt xlib:window}\index{window} data type and a 
@@ -527,7 +527,7 @@ stream} is another contact subclass defined by CLUE. Interactive streams
 are designed to integrate CLUE with the conventional stream-based I/O of
 Common Lisp.\index{interactive-stream}
 
-\SAME{The Event Loop, Contact Displays, and Contact Input}
+\subsection{The Event Loop, Contact Displays, and Contact Input}
 \index{contact-display}
 CLUE defines the {\tt contact-display} object type, which represents the
 basic input processing of an interactive application and which supports
@@ -543,7 +543,7 @@ appropriate contact. At the center of the CLUE event loop,
 the contact receiving an input event is then responsible for invoking all
 appropriate responses.
 
-\SAME{Graphics Contexts}
+\subsection{Graphics Contexts}
 Clients of the X Window System
 specify the visual attributes of graphical output primitives by using
 {\bf graphics contexts}.
@@ -553,7 +553,7 @@ programmers are still free to adopt various policies for sharing
 graphics contexts, including hierarchical inheritance or no sharing at
 all.
 
-\SAME{Resources}
+\subsection{Resources}
 CLUE allows various values of
 the
 user interface (e.g.\ colors, fonts, title strings, etc.) to be treated as {\bf
@@ -566,7 +566,7 @@ contact objects to integrate the preferences of both the interface
 programmer and an individual user.
 
 
-\HIGHER{Previous Work}
+\section{Previous Work}
 The design of CLUE was modelled on the 
 X-Toolkit (Xt) library
 \index{X-Toolkit}\cite{Xt}.
@@ -576,7 +576,7 @@ System itself.  CLUE could be described as a translation of the X-Toolkit
 ``intrinsics'' into the domain of Common Lisp and CLOS.
 
 
-\SAME{Packages}
+\section{Packages}
 \index{CLUE package}\index{packages, CLUE}
 All CLUE symbols (classes, functions, methods, macros, etc.) are interned in 
 the package named {\tt CLUE}. Unless otherwise specified, all symbols defined by 
@@ -591,7 +591,7 @@ package explicitly.
 
 
 
-\CHAPTER{Contacts}
+\chapter{Contacts}
 \index{contact} 
 
 \LOWERL{Using Contacts}{ch:contacts}
