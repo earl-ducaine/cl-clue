@@ -566,7 +566,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
 		:background bg-color))
          (menu-mgr (menu-manager menu)))
     ;; Create menu items
-    (dolist (label '("Fortran" "APL" "Forth" "Lisp"))
+    (dolist (label (reverse '("Fortran" "APL" "Forth" "Lisp")))
       (make-contact
         'button
         :parent     menu-mgr

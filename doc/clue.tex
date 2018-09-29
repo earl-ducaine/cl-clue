@@ -1,309 +1,41 @@
 % -*- Mode:TeX -*-
-%%%----------------------------------------------------------------------------------+  
-%%%                                                                                  |
-%%%                          TEXAS INSTRUMENTS INCORPORATED                          |
-%%%                                  P.O. BOX 149149                                 |
-%%%                             AUSTIN, TEXAS 78714-9149                             |
-%%%                                                                                  |
-%%%             Copyright (C) 1988, 1989 Texas Instruments Incorporated.             |
-%%%                                                                                  |
-%%% Permission is granted to any individual or institution to use, copy, modify, and |
-%%% distribute this document, provided that  this complete copyright and  permission |
-%%% notice is maintained, intact, in all copies and supporting documentation.        |
-%%%                                                                                  |
-%%% Texas Instruments Incorporated provides this software "as is" without express or |
-%%% implied warranty.                                                                |
-%%%                                                                                  |
-%%%----------------------------------------------------------------------------------+
-%
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                 %
-%                            Preamble                             %
-%                                                                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentstyle[twoside]{report}
-\pagestyle{headings}
-%%
-%% Inserted from home:/usr/local/hacks/tex/setmargins.tex:
-%%
-%%    Original: Glenn Manuel 12-17-86
-%%    Added optional [printer-offset]: Glenn Manuel 2-27-87
-%% Sets the margins, taking into account the fact that LaTex
-%% likes to start the left margin 1.0 inch from the left edge
-%% of the paper.
-%%   This macro prints on the screen and in the log file
-%%   the values it sets for:
-%%     Textwidth, Odd Page Left Margin, Even Page Left Margin,
-%%     Marginparwidth, Printer Offset
-%%     (the values are in points: 72.27 pts/inch).
-%%     The Odd and Even Page Left Margins include LaTeX's
-%%     built-in 1.0in offset, but NOT the [printer-offset],
-%%     so these values always indicate what the actual
-%%     printout SHOULD measure.
-%%
-%% USAGE:  Place the following between the
-%%         \documentstyle   and  \begin{document} commands:
-%% \input{this-file's-name}
-%% \setmargins[printer-offset]{line-length}{inside-margin-width}
-%%
-%%   where ALL arguments to \setmargins are DIMENSIONS
-%%           like {6.5in}, {65pt}, {23cm}, etc.
-%%   The units MUST BE SUPPLIED, even if the dimension is zero {0in}.
-%%
-%%   [printer-offset] is optional.  Default is zero.
-%%
-%%   Examples:
-%% \setmargins{0in}{0in}         % default line length & default margins
-%% \setmargins[-.12in]{0in}{0in} % compensate for printer offset
-%% \setmargins{0in}{1in}         % default line length, 1 inch inner margin
-%% \setmargins{6.5in}{0in}       % 6.5 inch line length & default margins
-%% \setmargins{5in}{1.5in}       % 5 inch line length & 1.5 inch inner margin
-%%
-%%   {inside-margin-width} is defined as follows:
-%%       For 1-sided printing: left margin for all pages.
-%%       For 2-sided printing: left  margin for odd pages,
-%%                             right margin for even pages.
-%%
-%%   Defaults:
-%%   Each argument has a default if {0in} is used as the argument:
-%%      line-length default = 6.0in
-%%      inside-margin-width default:
-%%         For 1-sided printing, text is centered on the page
-%%                     (each margin = [1/2]*[8.5in - line length]);
-%%         For 2-sided printing, inside margin is twice the outside margin
-%%                     (inside  margin = [2/3]*[8.5in - line length],
-%%                      outside margin = [1/3]*[8.5in - line length]).
-%%      printer-offset default = 0in
-%%
-%%  For all cases, the outside margin (and marginparwidth, the
-%%  width of margin notes) is just whatever is left over after
-%%  accounting for the inside margin and the line length.
-%%
-%% Note: LaTeX's built-in offset of 1.0 inch can vary somewhat,
-%%       depending upon the alignment of the Laser printer.
-%%       If you need it to be EXACT, you will have to supply
-%%       the optional [printer-offset] argument.
-%%       Subtract the actual measured left margin on an
-%%       odd-numbered page from the printed Odd Page Left Margin
-%%       value, and use the result as the [printer-offset].
-%%       Positive values shift everything to the right,
-%%       negative values shift everything to the left.
-%%
-\makeatletter
-\def\setmargins{\@ifnextchar[{\@setmargins}{\@setmargins[0in]}}
-\def\@setmargins[#1]#2#3{
-%%%  Uses temporary dimension registers \dimen0, \dimen2, \dimen3, \dimen1
-    \dimen1=#1                         % 1st argument [printer offset]
-    \dimen2=#2                         % 2nd argument (line length)
-    \dimen3=#3                         % 3rd argument (inner margin)
-     \advance\dimen1 by -1.0in         % for LaTeX built-in offset
-    \ifdim\dimen2=0in 
-        \textwidth=6in  \dimen2=6in
-    \else \textwidth=\dimen2
-    \fi
-    \dimen0=8.5in
-    \advance\dimen0 by -\dimen2         % 8.5in - line length
-    \if@twoside
-       \ifdim\dimen3=0in  % use defaults: 2/3 inside, 1/3 outside
-          \divide\dimen0 by 3           % (8.5in-line length)/3
-          \dimen2=2\dimen0              % (2/3)*(8.5in-line length)
-          \oddsidemargin=\dimen2
-          \advance\oddsidemargin by \dimen1   % add in offset
-          \dimen2=\dimen0               % (8.5in-line length)/3
-          \evensidemargin=\dimen2
-          \advance\evensidemargin by \dimen1  % add in offset
-%  allow for space on each side of marginal note
-          \advance\dimen0 by -2\marginparsep
-          \marginparwidth=\dimen0
-       \else            % use supplied 2-sided value
-          \oddsidemargin=\dimen3             % inside-margin-width
-          \advance\oddsidemargin by \dimen1  % add in offset
-          \advance\dimen0 by -\dimen3   % 8.5in-line length-inside margin
-          \evensidemargin=\dimen0
-          \advance\evensidemargin by \dimen1 % add in offset
-%  allow for space on each side of marginal note
-          \advance\dimen0 by -2\marginparsep
-          \marginparwidth=\dimen0
-       \fi
-%  one-sided
-    \else \ifdim\dimen3=0in  % use defaults: center text 
-              \divide\dimen0 by 2         % (8.5in-line length)/2
-              \oddsidemargin=\dimen0      % (8.5in-line length)/2
-              \advance\oddsidemargin by \dimen1   % add in offset
-              \evensidemargin=\dimen0     % (8.5in-line length)/2
-              \advance\evensidemargin by \dimen1  % add in offset
-%  allow for space on each side of marginal note
-              \advance\dimen0 by -2\marginparsep
-              \marginparwidth=\dimen0
-          \else  % use supplied values
-              \advance\dimen0 by -\dimen3  % 8.5in-line length-left margin
-%  allow for space on each side of marginal note
-              \advance\dimen0 by -2\marginparsep
-              \marginparwidth=\dimen0
-              \advance\dimen3 by \dimen1   % add in offset
-              \oddsidemargin=\dimen3
-              \evensidemargin=\dimen3
-          \fi
-    \fi
-  \immediate\write16{Textwidth = \the\textwidth}
-  \dimen0=1.0in
-  \advance\dimen0 by \oddsidemargin
-  \immediate\write16{Odd Page Left Margin = \the\dimen0}
-  \dimen0=1.0in
-  \advance\dimen0 by \evensidemargin
-  \immediate\write16{Even Page Left Margin = \the\dimen0}
-  \immediate\write16{Marginparwidth = \the\marginparwidth}
-  \dimen0=#1
-  \immediate\write16{Printer Offset = \the\dimen0}
- }
-%
-\def\@outputpage{\begingroup\catcode`\ =10 \if@specialpage 
-     \global\@specialpagefalse\@nameuse{ps@\@specialstyle}\fi
-     \if@twoside 
-       \ifodd\count\z@ \let\@thehead\@oddhead \let\@thefoot\@oddfoot
-                       \let\@themargin\oddsidemargin
-% treat page 0 (title page) as if it is an odd-numbered page
-        \else \ifnum\count\z@=0 \let\@thehead\@oddhead \let\@thefoot\@oddfoot
-                                \let\@themargin\oddsidemargin
-              \else \let\@thehead\@evenhead
-                    \let\@thefoot\@evenfoot \let\@themargin\evensidemargin
-     \fi\fi\fi
-     \shipout
-     \vbox{\normalsize \baselineskip\z@ \lineskip\z@
-           \vskip \topmargin \moveright\@themargin
-           \vbox{\setbox\@tempboxa
-                   \vbox to\headheight{\vfil \hbox to\textwidth{\@thehead}}
-                 \dp\@tempboxa\z@
-                 \box\@tempboxa
-                 \vskip \headsep
-                 \box\@outputbox
-                 \baselineskip\footskip
-                 \hbox to\textwidth{\@thefoot}}}\global\@colht\textheight
-           \endgroup\stepcounter{page}\let\firstmark\botmark}
-%
-\makeatother
-%%
-%% End of home:/usr/local/hacks/tex/setmargins.tex:
-%%
-\setmargins{6.5in}{1in}
-\topmargin = 0in
-\headheight = 5mm
-\headsep = 3mm
-\textheight = 9in
-%\textwidth = 5.9in
+
+%%% TEXAS INSTRUMENTS INCORPORATED
+%%% P.O. BOX 149149
+%%% AUSTIN, TEXAS 78714-9149
+%%%
+%%% Copyright (C) 1988, 1989 Texas Instruments Incorporated.
+%%%
+%%% Permission is granted to any individual or institution to use, copy, modify, and
+%%% distribute this document, provided that  this complete copyright and  permission
+%%% notice is maintained, intact, in all copies and supporting documentation.
+%%%
+%%% Texas Instruments Incorporated provides this software "as is" without express or
+%%% implied warranty.                                                               
+
+
+
+\documentclass[twoside]{book}
+\usepackage{makeidx}
+\usepackage{epsfig}
+
 \makeindex
-\begin{document}
-% Simple command to generate the index.
-\newcommand{\outputindex}[1]{{
-\begin{theindex}
-\input{#1}
-\end{theindex}
-}}
-%%
-%% Inserted from home:/u3/ekberg/tex/pretxt.tex
-%%
-% Define the old PRETXT SAME/HIGHER/LOWER commands.
-% These let one move up and down in the dot level numbering
-% system without having to know the current level.  Note that the L
-% version of the macro exists to allow one to specify a label for the
-% section information.
-%
-% If you didn't understand the above, then read on.  PRETXT is the
-% name of a preprocessor for another word processor which added some
-% interesting features.  The feature implemented here, is an improved
-% numbering scheme based upon the existing numbering scheme available
-% in LaTeX.  The improvement is that one need not remember which level
-% you are at when defining a new section, one only need remember the
-% relative ordering.  For example:
-%   LaTeX input                          LaTeX output
-%   \CHAPTER{Foo}                          1
-%   \LOWER{Foo Bar}                        1.1
-%   \LOWER{Foo Bar Baz}                    1.1.1
-%   \SAME{More Foo Bar}                    1.1.2
-%   \SAME{Even More Foo Bar}               1.1.3
-%   \HIGHER{More Foo}                      1.2
-%   \SAME{Even More Foo}                   1.3
-%   \LOWER{Even More Even more Foo}        1.3.1
-% The advantage here is that one can reorganize entire sections of
-% text and only have to change one of the section numbering commands
-% (the first one).  With the original LaTeX method, one would have to
-% change every section numbering command if one moved to a different
-% level in the hierarchy.
-%
-% These four commands have alternates which allow one to specify a
-% label for the section number and its page.  This allows one to refer
-% to that number elsewhere in the document.  The alternates are
-% CHAPTERL, LOWERL, SAMEL and HIGHERL.
-%
-\countdef\sectionlevel=100
-\global\sectionlevel=0
-\newcommand{\CHAPTER}[1]{\global\sectionlevel=0 \chapter{#1}
-}
-\newcommand{\CHAPTERL}[2]{\global\sectionlevel=0 \chapter{#1} \label{#2}
-}
-\newcommand{\SAME}[1]{
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1}}
-           \else {\bigskip \subsubsection{#1}}
-           \fi
-      \fi
- \fi}
-\newcommand{\SAMEL}[2]{
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1} \label{#2}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1} \label{#2}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1} \label{#2}}
-           \else {\bigskip \subsubsection{#1} \label{#2}}
-           \fi
-      \fi
- \fi}
-\newcommand{\LOWER}[1]{{\global\advance\sectionlevel by1}
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1}}
-           \else {\bigskip \subsubsection{#1}}
-           \fi
-      \fi
- \fi}
-\newcommand{\LOWERL}[2]{{\global\advance\sectionlevel by1}
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1} \label{#2}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1} \label{#2}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1} \label{#2}}
-           \else {\bigskip \subsubsection{#1} \label{#2}}
-           \fi
-      \fi
- \fi}
-\newcommand{\HIGHER}[1]{{\global\advance\sectionlevel by-1}
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1}}
-           \else {\bigskip \subsubsection{#1}}
-           \fi
-      \fi
- \fi}
-\newcommand{\HIGHERL}[2]{{\global\advance\sectionlevel by-1}
- \ifnum\sectionlevel=0 {\global\sectionlevel=0 {\chapter{#1} \label{#2}}}
- \else\ifnum\sectionlevel=1 {\bigskip \section{#1} \label{#2}}
-      \else\ifnum\sectionlevel=2 {\bigskip \subsection{#1} \label{#2}}
-           \else {\bigskip \subsubsection{#1} \label{#2}}
-           \fi
-      \fi
- \fi}
-%%
-%% End of home:/u3/ekberg/tex/pretxt.tex
-%%
-\setlength{\parskip}{5 mm}
-\setlength{\parindent}{0 in}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                 %
-%                            Document                             %
-%                                                                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% For PDF
+%\renewcommand{\rmdefault}{phv}
+%\renewcommand{\sfdefault}{phv}
+%\renewcommand{\ttdefault}{pcr}
+%\usepackage[ps2pdf,hyperindex,hypertex,
+%  pdftitle={CLIM II Specification},
+%  pdfauthor={various},
+%  colorlinks=true,linkcolor=blue,pagecolor=blue,
+%  pdfstartview=FitBV,pdfview=FitBV]{hyperref}
+%% end PDF
 
-%
+
+
 \title{Common Lisp User Interface Environment}
+
 \author{Kerry Kimbrough \\
 LaMott Oren \\ \\
 Texas Instruments Incorporated} 
@@ -314,11 +46,21 @@ July, 1990 \\[2 in]
      Permission is granted to any individual or institution to use,
      copy, modify and distribute this document, provided that  this
      complete  copyright  and   permission  notice   is maintained,
-     intact, in  all  copies  and  supporting documentation.  Texas
+     intact, in  all  copies  and  supporting documentation. Texas
      Instruments Incorporated  makes  no  representations about the
      suitability of the software described herein for any  purpose.
      It is provided ``as is'' without express or implied warranty.
 }}
+
+\date{Printed \today}
+\markright{CLUE Reference}
+
+
+
+\begin{document}
+\begin{sloppy}
+
+
 \maketitle
 \setcounter{page}{1}
 \pagenumbering{roman}
@@ -329,91 +71,85 @@ July, 1990 \\[2 in]
 \setcounter{page}{0}
 \pagenumbering{arabic}
 
-%
-\CHAPTER{Introduction}
-This document describes the Common Lisp User Interface Environment (CLUE), a
-portable system for user interface programming in Common Lisp.
-CLUE is based on the X Window System\cite{x-window-system} and extends X to
-provide an architectural model for the construction of interactive
-Lisp applications.
-In this model, a user interface is composed of a set of abstract interface
-objects.  CLUE defines the basic programmer interfaces for defining
-interface object types, creating interface
-objects, and using them to control the dialog between the application and its
-human user.  
-%
-\section{Goals}
-{\bf Portable}
-\begin{quote}
-Applications which use CLUE should be easily portable to any hardware/software
+
+\chapter {Introduction}
+\label {Introduction}
+
+This document describes the Common Lisp User Interface Environment
+(CLUE), a portable system for user interface programming in Common
+Lisp. CLUE is based on the X Window System \cite{x-window-system} and
+extends X to provide an architectural model for the construction of
+interactive Lisp applications. In this model, a user interface is
+composed of a set of abstract interface objects. CLUE defines the
+basic programmer interfaces for defining interface object types,
+creating interface objects, and using them to control the dialog
+between the application and its human user.
+
+Goals
+\begin{description}
+
+\item [Portable]  Applications which use CLUE should be easily portable to any hardware/software
 environment which provides an implementation of CLUE and CLX\index{CLX}\cite{clx},
-the Common Lisp programmer's interface to the X Window System.  CLUE
+the Common Lisp programmer's interface to the X Window System. CLUE
 itself should be a portable software system written in Common Lisp\cite{cltl}.
-\end{quote}
-%
-{\bf Flexible}
-\begin{quote}
-CLUE is intended to support the development of a wide variety of user interface
-styles. In particular, it should be possible to use CLUE to implement any of the
-user interfaces found in current Lisp development environments. Both
-graphical and textual interfaces should be easy to create. In order to achieve
-this goal, CLUE is
-``policy-free''. That is, decisions about user interface style --- the look,
-feel, consistency, and techniques of the interface --- are left to the user
-interface programmer.
-\end{quote}
-%
-{\bf Extensible}
-\begin{quote}
-CLUE should provide the ability to define and deploy new types of user
-interface objects which refine and extend the behavior of more basic
-object types. CLUE provides this ability through the methodology
-of object-oriented programming.  
-\end{quote} 
-%
-{\bf Modular}
-\begin{quote}
-CLUE should comprise a well-defined and self-sufficient layer of the
-user interface programming system. Using
-CLUE, an
-application programmer should be able to implement most types of user
-interfaces without accessing underlying software layers and without knowledge of the
-implementation internals of CLUE objects.
-\end{quote} {\bf Compatible}
-\begin{quote}
-CLUE must be compatible with related software systems which will be
-separately standardized. 
-CLUE is based on the X Window System
-\index{X Window System} which,
-because of its wide distribution and broad support, constitutes a {\it de facto}
-standard\footnotemark.
-CLUE should be consistent with future Common Lisp standards for object-oriented programming.
-Therefore, CLUE is based on the proposed Common Lisp Object System
-(CLOS)
-\index{CLOS}\cite{clos}.
-\end{quote}
-\footnotetext{X is also
-being considered by ANSI for a proposed national standard for display
-management.}
-%
-%
-\section{Overview}
-\subsection{Contacts}
-%
+
+
+\item [Flexible] CLUE is intended to support the development of a wide
+  variety of user interface styles. In particular, it should be
+  possible to use CLUE to implement any of the user interfaces found
+  in current Lisp development environments. Both graphical and textual
+  interfaces should be easy to create. In order to achieve this goal,
+  CLUE is ``policy-free''. That is, decisions about user interface
+  style --- the look, feel, consistency, and techniques of the
+  interface --- are left to the user interface programmer.
+
+
+\item [Extensible] CLUE should provide the ability to define and
+  deploy new types of user interface objects which refine and extend
+  the behavior of more basic object types. CLUE provides this ability
+  through the methodology of object-oriented programming.
+
+\item [Modular] CLUE should comprise a well-defined and
+  self-sufficient layer of the user interface programming
+  system. Using CLUE, an application programmer should be able to
+  implement most types of user interfaces without accessing underlying
+  software layers and without knowledge of the implementation
+  internals of CLUE objects.
+
+
+\item [Compatible] CLUE must be compatible with related software
+  systems which will be separately standardized. CLUE is based on the
+  X Window System \index{X Window System} which, because of its wide
+  distribution and broad support, constitutes a {\it de facto}
+  standard\footnotemark. CLUE should be consistent with future Common
+  Lisp standards for object-oriented programming. Therefore, CLUE is
+  based on the proposed Common Lisp Object System (CLOS)
+  \index{CLOS}\cite{clos}.
+
+\end{description}
+
+\footnotetext{X is also being considered by ANSI for a proposed
+  national standard for display management.}
+
+
+\section {Overview}
+\subsection {Contacts}
+
 In CLUE, the basis for programming the user interface of an application
 program is object-oriented programming --- creating objects called
-{\bf contacts}\index{contact} and invoking their methods.  
+{\bf contacts}\index{contact} and invoking their methods. 
 
 An interactive application program can be considered to consist of a collection
 of functions,  some of which perform the processing that is essential
 to the application's purpose (e.g.\ text editing, knowledge base management,
-etc.).  Other functions exist solely for the purpose of communicating with
-the application's human user.  In CLUE, such human interface functions are
-represented by objects known as {\bf contacts}.  Contacts are responsible for
+etc.). Other functions exist solely for the purpose of communicating with
+the application's human user. In CLUE, such human interface functions are
+represented by objects known as {\bf contacts}. Contacts are responsible for
 presenting application information to the user on the display screen and for
 informing the application of input sent by the user via interactive input
-devices (such as the keyboard and the pointer).  A contact generally embodies a
+devices (such as the keyboard and the pointer). A contact generally embodies a
 component of the user interface that knows how to:
+
 \begin{itemize}
 \item  display its contents,
 \item process input events that are directed to it, and 
@@ -421,8 +157,10 @@ component of the user interface that knows how to:
 \end{itemize}
 
 A contact provides a relatively high-level abstraction for user interface
-programming.  The purpose of such an abstraction is twofold: 
+programming. The purpose of such an abstraction is twofold: 
+
 \begin{itemize}	
+
 \item To simplify and raise the level of the dialog between the application and
 the user. A contact insulates the application programmer from the detailed behavior
 of a user interface component (displaying its contents, acquiring its input,
@@ -433,6 +171,7 @@ communication with the user in terms closer to the application's domain.
 interface objects can be combined. The contact class raises to a higher level the
 commonality between a great variety of interface objects --- menus, forms,
 dials, scroll bars, buttons, dialog boxes, text entry, etc.
+
 \end{itemize}
 
 Because CLUE is an object-oriented programming system, it is described
@@ -440,7 +179,6 @@ in terms of the proposed standard
 Common Lisp Object System (CLOS)\index{CLOS}\cite{clos}. The CLUE
 specification thus
 consists primarily of a set of CLOS classes, generic functions, and methods. 
-
 
 The subclassing and inheritance properties of CLOS are
 important to the use of contacts. A contact (sub)class implements a
@@ -452,7 +190,8 @@ drop-shadow-pop-up-menu subclass). This is expected to lead to the development
 of contact ``libraries'', providing a rich repertoire of interface
 techniques and a choice of several functionally-interchangeable styles.
 
-\subsection{The User Interface Programming System}{ch:uips}
+\subsection {The User Interface Programming System}{ch:uips}
+
 
 As defined by CLUE, contact objects represent an intermediate level of
 abstraction within a larger user interface programming system.
@@ -464,7 +203,7 @@ more comprehensive {\bf user interface management system}
 
 CLUE depends on a window system to provide programmer interfaces for controlling
 interactive I/O hardware  --- the display screen(s), the keyboard, the
-pointer, etc.  Specifically, CLUE is defined in
+pointer, etc. Specifically, CLUE is defined in
 terms of the X Window System protocol\cite{x-protocol} and CLX\index{CLX}, the
 Common Lisp programmer's interface to the X Window System\cite{clx}. 
 
@@ -480,62 +219,66 @@ CLUE distinguishes two different aspects of programming the user
 interface:
 
 \begin{itemize}
+
 \item Defining a contact
+
 \item Using a contact
-\end{itemize} 
+
+\end{itemize}
+
 The {\bf application programmer}\index{application programmer} who
-instantiates and uses a contact object does not need to know 
-how the class and methods of the contact were implemented 
-by the 
-{\bf contact programmer}\index{contact programmer}. 
-In particular, the
-window system interfaces used by the contact programmer need not be
-visible to the CLUE application programmer. 
+instantiates and uses a contact object does not need to know how the
+class and methods of the contact were implemented by the {\bf contact
+  programmer}\index{contact programmer}. In particular, the window
+system interfaces used by the contact programmer need not be visible
+to the CLUE application programmer.
 
 This distinction contributes to the separation of application
-programming
-from user interface programming, one of the primary goals of a
-UIMS.
-In terms of the Seeheim UIMS model\cite{pfaff-uims}, contacts represent
-the presentation (or lexical) component of a user interface.
-\index{user interface, lexical component}
-\index{UIMS, presentation component}
+programming from user interface programming, one of the primary goals
+of a UIMS. In terms of the Seeheim UIMS model\cite{pfaff-uims},
+contacts represent the presentation (or lexical) component of a user
+interface. \index{user interface, lexical component} \index{UIMS,
+  presentation component}
 
 \section{Summary of Features}
+
 \subsection{Contacts, Composites, and Interactive Streams}
-CLUE defines the basic class of  {\bf contact} objects, the fundamental
-components of a user interface. \index{contact}
-Contacts are a subclass of the CLX {\tt xlib:window}\index{window} data type and a 
-contact object may be used wherever a {\tt xlib:window} object is allowed. 
 
-Additionally, CLUE defines the 
-subclass of {\bf composites}, representing contacts which are the
-``parents'' of other
-contacts. A composite contact may be the parent of another composite,
-leading to a tree-structured contact hierarchy. \index{composite}
-A composite also furnishes geometry management and input focus management
-services for the contacts which are its children.
-{\bf Roots}\index{root} are special composite contacts used
-to represent entire display screens. {\bf Shells}\index{shell} are composites
-which handle the duties required by standard conventions for top-level
-X windows\cite{icccm}\index{interclient communication}. CLUE defines several
-shell subclasses which implement
-client interaction with window managers and session managers.
+CLUE defines the basic class of {\bf contact} objects, the fundamental
+components of a user interface. \index{contact} Contacts are a
+subclass of the CLX {\tt xlib:window} \index{window} data type and a
+contact object may be used wherever a {\tt xlib:window} object is
+allowed.
 
-An {\bf interactive 
-stream} is another contact subclass defined by CLUE. Interactive streams
-are designed to integrate CLUE with the conventional stream-based I/O of
-Common Lisp.\index{interactive-stream}
+Additionally, CLUE defines the subclass of {\bf composites},
+representing contacts which are the ``parents'' of other contacts. A
+composite contact may be the parent of another composite, leading to a
+tree-structured contact hierarchy. \index{composite} A composite also
+furnishes geometry management and input focus management services for
+the contacts which are its children. {\bf Roots} \index{root} are
+special composite contacts used to represent entire display
+screens. {\bf Shells} \index{shell} are composites which handle the
+duties required by standard conventions for top-level X
+windows \cite{icccm}
+
+\index{interclient communication}. CLUE defines
+several shell subclasses which implement client interaction with
+window managers and session managers.
+
+An {\bf interactive stream} is another contact subclass defined by
+CLUE. Interactive streams are designed to integrate CLUE with the
+conventional stream-based I/O of Common
+Lisp.\index{interactive-stream}
 
 \subsection{The Event Loop, Contact Displays, and Contact Input}
 \index{contact-display}
-CLUE defines the {\tt contact-display} object type, which represents the
-basic input processing of an interactive application and which supports
-the {\bf event loop model}\index{event loop model} for application
-input. 
-A {\tt contact-display} object inherits the behavior of a CLX
-{\tt xlib:display} object\index{display} and can be substituted wherever a {\tt
-xlib:display} is allowed.
+
+CLUE defines the {\tt contact-display} object type, which represents
+the basic input processing of an interactive application and which
+supports the {\bf event loop model} \index{event loop model} for
+application input. A {\tt contact-display} object inherits the
+behavior of a CLX {\tt xlib:display} object \index{display} and can be
+substituted wherever a {\tt xlib:display} is allowed.
 
 In CLUE, the event loop is represented as an operation on a {\tt
 contact-display} object, which dispatches input events to the
@@ -544,69 +287,66 @@ the contact receiving an input event is then responsible for invoking all
 appropriate responses.
 
 \subsection{Graphics Contexts}
-Clients of the X Window System
-specify the visual attributes of graphical output primitives by using
-{\bf graphics contexts}.
-CLUE provides support for more efficient sharing of graphics context
-objects among several components of the user interface.  Contact
+
+Clients of the X Window System specify the visual attributes of
+graphical output primitives by using {\bf graphics contexts}. CLUE
+provides support for more efficient sharing of graphics context
+objects among several components of the user interface. Contact
 programmers are still free to adopt various policies for sharing
 graphics contexts, including hierarchical inheritance or no sharing at
 all.
 
 \subsection{Resources}
-CLUE allows various values of
-the
-user interface (e.g.\ colors, fonts, title strings, etc.) to be treated as {\bf
-resources} which can be stored and retrieved from  a {\bf resource
-database}\index{resource, database}, using the resource management facilities of
-CLX.  User interface values in a resource database can be modified
-by a user ``externally,'' without change to the application program.
-This provides a consistent mechanism for
-contact objects to integrate the preferences of both the interface
-programmer and an individual user.
+
+CLUE allows various values of the user interface (e.g.\ colors, fonts,
+title strings, etc.) to be treated as {\bf resources} which can be
+stored and retrieved from a {\bf resource database} \index{resource,
+  database}, using the resource management facilities of CLX. User
+interface values in a resource database can be modified by a user
+``externally,'' without change to the application program.  This
+provides a consistent mechanism for contact objects to integrate the
+preferences of both the interface programmer and an individual user.
 
 
 \section{Previous Work}
-The design of CLUE was modelled on the 
-X-Toolkit (Xt) library
-\index{X-Toolkit}\cite{Xt}.
-The X-Toolkit is a user interface programming package, designed chiefly for
-programmers using the C language, and distributed with the X Window
-System itself.  CLUE could be described as a translation of the X-Toolkit
-``intrinsics'' into the domain of Common Lisp and CLOS.
+
+The design of CLUE was modelled on the X-Toolkit (Xt) library
+\index{X-Toolkit} \cite{Xt}. The X-Toolkit is a user interface
+programming package, designed chiefly for programmers using the C
+language, and distributed with the X Window System itself. CLUE could
+be described as a translation of the X-Toolkit ``intrinsics'' into the
+domain of Common Lisp and CLOS.
 
 
 \section{Packages}
-\index{CLUE package}\index{packages, CLUE}
-All CLUE symbols (classes, functions, methods, macros, etc.) are interned in 
-the package named {\tt CLUE}. Unless otherwise specified, all symbols defined by 
-this specification are assumed to be interned in the {\tt CLUE} package.
 
-\index{XLIB package}\index{packages, XLIB}
-All symbols which belong to CLX are interned in the {\tt XLIB} package.
-References in this document to CLX symbols will always specify the {\tt XLIB}
-package explicitly.
+\index{CLUE package} \index{packages, CLUE} All CLUE symbols (classes,
+functions, methods, macros, etc.) are interned in the package named
+{\tt CLUE}. Unless otherwise specified, all symbols defined by this
+specification are assumed to be interned in the {\tt CLUE} package.
 
-
-
+\index{XLIB package} \index{packages, XLIB} All symbols which belong
+to CLX are interned in the {\tt XLIB} package.  References in this
+document to CLX symbols will always specify the {\tt XLIB} package
+explicitly.
 
 
 \chapter{Contacts}
 \index{contact} 
 
-\LOWERL{Using Contacts}{ch:contacts}
-The fundamental properties of a contact are defined by the {\tt contact} class.
-All contact classes must be defined using the {\tt
-defcontact} macro (see Section~\ref{ch:defcontact}).
-Contacts are a subclass of the CLX {\tt xlib:window}\index{window} data type and a {\tt
-contact}
-object may be used wherever a {\tt xlib:window} object is allowed. Because {\tt
-xlib:window} is a subtype of {\tt xlib:drawable}, a {\tt contact} can also be an
-argument to all CLX operations on {\tt xlib:drawable} objects.
-\index{drawable}
+\section{Using Contacts}{ch:contacts}
+The fundamental properties of a contact are defined by the {\tt
+  contact} class.  All contact classes must be defined using the {\tt
+  defcontact} macro (see Section~\ref{ch:defcontact}).  Contacts are a
+subclass of the CLX {\tt xlib:window} \index{window} data type and a
+{\tt contact} object may be used wherever a {\tt xlib:window} object
+is allowed. Because {\tt xlib:window} is a subtype of {\tt
+  xlib:drawable}, a {\tt contact} can also be an argument to all CLX
+operations on {\tt xlib:drawable} objects. \index{drawable}
 
-{\large {\bf contact \hfill Class}} 
+{\large {\bf contact \hfill Class}}
 \index{classes, contact}
+
 \begin{flushright}
 \parbox[t]{6.125in}{
 \tt
@@ -801,7 +541,7 @@ management control.
 Callbacks are also discussed in
 Section~\ref{ch:callbacks}. 	An initial value for the {\tt callbacks} slot may
 	specified using the {\tt :callbacks}
-	initarg.  The value should be a list of the form {\tt ({\em
+	initarg. The value should be a list of the form {\tt ({\em
 	callback-entry}*)} ,
 	where each {\em callback-entry} is a list of the form {\tt ({\em
 	callback-name} [({\em function}
@@ -882,7 +622,7 @@ contact instance is first {\bf initialized}\index{contact, initializing} and
 then {\bf realized}\index{contact, realizing}\index{realized}. Initialization consists
 of collecting initial values for all contact attributes. However, no X server
 \index{X Window System, server} resources (windows, etc.) are actually
-allocated.  Later, when the contact is realized,
+allocated. Later, when the contact is realized,
 these resources are allocated and contact creation is complete. Postponing
 server resource allocation until realization can make the process of creating a
 new contact much more efficient. It is common for server resources to be
@@ -903,7 +643,7 @@ resources\index{resource} that can be read from a resource database
 (see Chapter~\ref{ch:resource-management}).
 Contact resources are described in the resource specification list given in the
 {\tt defcontact} form defining a contact class (see
-Section~\ref{ch:defcontact}).  \index{defcontact macro}
+Section~\ref{ch:defcontact}). \index{defcontact macro}
 For example, the resource specification list for the {\tt contact} class allows values for
 certain slots, for window creation attributes, and for other
 attributes to be read from a resource database during contact
@@ -919,16 +659,16 @@ functionality is currently incomplete. Furthermore, the use of a special
 {\tt make-contact} function allows for various optimizations in
 contact initialization.}. 
 
-Typically, CLUE programmers need not be aware of contact realization.  CLUE
+Typically, CLUE programmers need not be aware of contact realization. CLUE
 realizes a contact automatically by calling the {\tt realize}
 function\index{realize method} during the next call to {\tt
 process-next-event}\index{process-next-event function} after initialization.
 However, there are cases when it is useful to invoke the {\tt
 update-state}\index{update-state function} function to cause realization
-explicitly (see Section~\ref{ch:contact-state}).  Contact programmers can use
+explicitly (see Section~\ref{ch:contact-state}). Contact programmers can use
 the {\tt realized-p} method\index{realized-p method} to ensure that operations
 which depend on the existence of contact server resources are not performed
-before the contact has been realized.  For example, graphics output to a contact
+before the contact has been realized. For example, graphics output to a contact
 cannot occur before it is realized, because its window does not yet exist.
 
 {\large {\bf make-contact \hfill Function, contact}}
@@ -1010,17 +750,17 @@ way for an application programmer to suggest a resource value which may be
 overridden by the contents of the resource database.
 
 \item If no value was found in the previous step, then the contact class
-default value for the resource is used.  The class default value is the
+default value for the resource is used. The class default value is the
 resource {\tt :initform} option found in the class {\tt defcontact} form,
 either in a resource specification\index{resource, specification} or (if the
-resource is also a class slot) in a slot specification.  It is an error for a
+resource is also a class slot) in a slot specification. It is an error for a
 {\tt defcontact} form to specify both resource and slot {\tt :initform}
 options for the same resource name.
 
 \item If no value was found in the previous step, then a class default value
-for the resource is inherited from one of the contact's superclasses.  The
+for the resource is inherited from one of the contact's superclasses. The
 most specific superclass that defines a class default resource value provides
-the inherited default.  \end{enumerate} }
+the inherited default. \end{enumerate} }
 
 \parbox[t]{6.125in}{
 If the resource name is a contact slot name, then the slot is set to the
@@ -1033,13 +773,13 @@ value found. If the contact programmer is also using non-slot resources, then an
 \parbox[t]{6.125in}{ If the initial value found for a resource is not of the
 type given by the {\tt :type} option in its resource specification,
 then
-{\tt make-contact} will attempt to convert the value to the correct type.  The
+{\tt make-contact} will attempt to convert the value to the correct type. The
 new contact's {\tt convert} method is called to perform all representation type
 conversions for resources (see
 Section~\ref{ch:representation-types}).\index{convert method} 
 This type
 conversion is a convenient way to initialize a slot or resource with an object
-which must created by a request to the X server (e.g.  {\tt xlib:font}, {\tt
+which must created by a request to the X server (e.g. {\tt xlib:font}, {\tt
 xlib:cursor}, {\tt xlib:pixmap}, etc.).
 
 }\end{flushright}
@@ -1074,7 +814,7 @@ said to be ``managed.'' As a
 result of CLUE geometry management, any changes to the position or size of a
 managed contact may affect the geometry of its managed siblings, its parent, and
 (in general) any other managed member of the contact subtree to which it
-belongs.  Creating or destroying a managed contact can have a similar
+belongs. Creating or destroying a managed contact can have a similar
 result. However, changes involving an unmanaged contact
 do not have this kind of ``ripple'' effect on the visible user interface. 
 \end{itemize}
@@ -1138,7 +878,7 @@ of a {\tt :managed} contact before positioning and mapping it).
 The default {\tt state} value is {\tt :mapped}. As a result, unless
 specified otherwise, all contacts will automatically be viewable after 
 {\tt update-state} is called (in particular, after a call to {\tt
-process-next-event}).  After initialization and realization, 
+process-next-event}). After initialization and realization, 
 the {\tt (setf contact-state)} accessor method causes transitions in a contact's
 state and its visible effect. The most common usages are setting a contact's
 state to {\tt :withdrawn} to withdraw it or to {\tt :mapped} to present it.
@@ -1222,7 +962,7 @@ Section~\ref{ch:geometry-management}).
 The return values indicate how the parent handled the 
 request. If {\tt approved-p} is non-{\tt nil}, then the request was performed as
 requested and
-the resulting new geometry values are returned.  Otherwise, the request was not
+the resulting new geometry values are returned. Otherwise, the request was not
 performed, but the geometry
 values returned suggest a compromise request which can be approved instead.
 If only {\tt nil} is returned, no geometry change is allowed.
@@ -1274,7 +1014,7 @@ Section~\ref{ch:geometry-management}).
 The return values indicate how the parent handled the 
 request. If {\tt approved-p} is non-{\tt nil}, then the request was performed as
 requested and
-the resulting new priority values are returned.  Otherwise, the request was not
+the resulting new priority values are returned. Otherwise, the request was not
 performed, but the priority
 values returned suggest a compromise request which can be approved instead.
 If only {\tt nil} is returned, no priority change is allowed.
@@ -1327,7 +1067,7 @@ The following functions are
 not intended to be called directly
 from application programs. However, a contact programmer will  use them to
 define the basic behavior of a new contact
-class.  
+class. 
 Several functions in this contact programmer interface are generic functions for
 which the {\tt
 contact} class defines methods; these methods may be redefined or modified by the
@@ -1369,19 +1109,19 @@ information used to implement contact methods.}
 }
 
 \begin{flushright} \parbox[t]{6.125in}
-{ Displays the contact.  The {\tt x},
+{ Displays the contact. The {\tt x},
 {\tt y}, {\tt width}, and {\tt height} parameters indicate the rectangular
-portion of the contact which needs to be (re)displayed.  {\tt x} and {\tt y}
+portion of the contact which needs to be (re)displayed. {\tt x} and {\tt y}
 specify the upper left corner of the redisplayed rectangle relative to the
-contact's origin.  If {\tt width} is omitted, then the width redisplayed is
-{\tt (- (contact-width contact) x)}.  Similarly, if {\tt height} is omitted,
+contact's origin. If {\tt width} is omitted, then the width redisplayed is
+{\tt (- (contact-width contact) x)}. Similarly, if {\tt height} is omitted,
 then the height redisplayed is {\tt (- (contact-height contact) y)}.
 
 This method is called by CLUE automatically during contact input
-processing, in response to {\tt :exposure} events.  If the {\tt
+processing, in response to {\tt :exposure} events. If the {\tt
 compress-exposures} slot of a contact's class is {\tt :on}, then {\tt
 display} will be called only once for each sequence of {\tt :exposure}
-events representing an exposed region of the contact.  \index{input,
+events representing an exposed region of the contact. \index{input,
 compression}\index{event, compression} See Section~\ref{ch:compression}
 for a description of event compression.
 
@@ -1412,7 +1152,7 @@ Returns  non-{\tt nil} if and only if the contact is willing to become the
 keyboard input focus. A contact which does not respond to keyboard input
 events should always return {\tt nil} as the value of this method. The
 primary method for the {\tt contact} class determines the value returned by
-inspecting the contact's {\tt event-mask}.  Management of
+inspecting the contact's {\tt event-mask}. Management of
 contact input focus is discussed further in Section~\ref{ch:focus-management}.
 
 }\end{flushright}
@@ -1523,11 +1263,11 @@ Realizes the {\tt contact}.
 \begin{flushright} \parbox[t]{6.125in}{
 Called in order to actually change the position of the contact.
 Returns true only if the new position of the contact differs from the previous
-position.  
+position. 
 
-The {\tt move} function should not be called from an application program.  An
+The {\tt move} function should not be called from an application program. An
 application program must first call {\tt change-geometry} \index{change-geometry
-function} in order to invoke geometry management.  {\tt move} is called only by
+function} in order to invoke geometry management. {\tt move} is called only by
 {\tt change-geometry} and by geometry management methods such as {\tt
 change-layout}. Any call to {\tt move} should appear inside an {\tt
 xlib:with-state} form to minimize server requests.
@@ -1561,13 +1301,13 @@ implement side-effects of position changes (such methods will not be invoked whe
 \begin{flushright} \parbox[t]{6.125in}{
 Called in order to actually change the size of the contact.
 Returns true only if the new size of the contact differs from the previous
-size.  
+size. 
 
-The {\tt resize} function should not be called from an application program.  An
+The {\tt resize} function should not be called from an application program. An
 application program must first call {\tt change-geometry} \index{change-geometry
-function} in order to invoke geometry management.  {\tt resize} is called only by
+function} in order to invoke geometry management. {\tt resize} is called only by
 {\tt change-geometry} and by geometry management methods such as {\tt
-change-layout}.  Any call to {\tt resize} should appear inside an {\tt
+change-layout}. Any call to {\tt resize} should appear inside an {\tt
 xlib:with-state} form to minimize server requests.
 
 A contact programmer may define {\tt :after} methods for {\tt resize}, in order to
@@ -1775,26 +1515,26 @@ implementation of the ``syntax'' that ties together the various components of a
 user interface. \index{user interface, syntactic component}
 
 Each {\tt contact} instance has a {\tt callbacks} slot containing a list of its
-callback functions.  The {\tt callbacks} slot is an association list containing
+callback functions. The {\tt callbacks} slot is an association list containing
 elements of the form 
 {\tt ({\em callback-name (function argument*)*})}.
 That is, the {\tt callbacks} list associates a {\em callback-name} symbol with a
-sequence of functions and their (optional) argument lists.  The {\em
+sequence of functions and their (optional) argument lists. The {\em
 callback-name} is used by the contact programmer to invoke each of the
 associated functions with the given arguments.
 
 Both the contact programmer and the application programmer are involved in
-establishing a contact's callbacks.  The contact programmer defines a set of
+establishing a contact's callbacks. The contact programmer defines a set of
 callback names and, for each callback, the basic argument and return value
-protocol to be used.  The contact programmer is also responsible for the
+protocol to be used. The contact programmer is also responsible for the
 implementation of contact methods, in which callback functions are invoked via
-the callback names.  The application programmer is responsible for associating
+the callback names. The application programmer is responsible for associating
 with each callback name the actual function(s) and arguments used to implement
 it. The application programmer can also extend the basic argument protocol used
 by associated functions.
 
 The relationship between a callback name and an associated function resembles
-that between a method name and the code which implements it.  In particular, the
+that between a method name and the code which implements it. In particular, the
 set of callback names used is the same for all instances of a contact class.
 These callback names and interfaces constitute a critical part of the
 application programmer interface to a contact class.
@@ -1803,20 +1543,20 @@ However, the key difference is that the associated callback functions and
 arguments are instance data that are usually different for each class instance.
 
 For example, a contact programmer may define a slider contact which uses a
-callback named {\tt user-changed\-value}.  The contact programmer arranges for
+callback named {\tt user-changed\-value}. The contact programmer arranges for
 this callback to be invoked each time the user manipulates the slider position
-and for it to be passed an argument indicating the new slider value.  A
+and for it to be passed an argument indicating the new slider value. A
 programmer of a robot control application may use such a slider to
-allow a user to adjust the rate at which the robot moves.  The application
+allow a user to adjust the rate at which the robot moves. The application
 programmer will thus want to modify the slider's {\tt callbacks} slot by adding
 an element like {\tt (user-changed-value change-robot-speed)}. In this case,
 {\tt change-robot-speed} should be an application function which accepts a
 single argument specifying the new robot speed.
 
 Callback functions are called using either the {\tt apply-callback}
-macro or the {\tt apply-callback-else} macro.  The {\tt callbacks} list
+macro or the {\tt apply-callback-else} macro. The {\tt callbacks} list
 of a contact can be modified by the functions {\tt add-callback} and
-{\tt delete-callback}.  Only one callback is involved in the basic
+{\tt delete-callback}. Only one callback is involved in the basic
 contact application programmer interface described in
 Section~\ref{ch:api} --- the {\tt :destroy} callback, which is called by
 the primary {\tt destroy} method.
@@ -1851,17 +1591,17 @@ function exists, then {\tt nil} is returned.}
 
 \parbox[t]{6.125in}{
 Callback functions are executed within a {\tt catch} form using the tag {\tt
-:abort-callback}.  If a callback function executes {\tt (throw :abort-callback
+:abort-callback}. If a callback function executes {\tt (throw :abort-callback
 {\em value*})}, then {\tt apply-callback} immediately returns the given {\em
 value} arguments.
 \index{callback, aborting}}
 
 \parbox[t]{6.125in}{ The argument list passed to each associated callback
 function consists of the given {\tt arguments}, followed by any function
-arguments associated with the function in the {\tt callbacks} list.  Thus, the
+arguments associated with the function in the {\tt callbacks} list. Thus, the
 caller of {\tt apply-callback} will not be aware of arguments taken from the
-{\tt callbacks} list.  This allows an application programmer freedom to extend
-the callback calling sequence defined by the contact programmer.  }
+{\tt callbacks} list. This allows an application programmer freedom to extend
+the callback calling sequence defined by the contact programmer. }
 \end{flushright}
 
 {\samepage
@@ -2007,8 +1747,8 @@ related to contacts.
 \HIGHERL{Defining a Contact Class}{ch:defcontact}
 \index{defcontact}\index{contact, defining a class}
 The {\tt defcontact} macro is used by a contact programmer to define a
-new contact class.  Expansion of
-this macro generates a {\tt defclass} form defining the class.  
+new contact class. Expansion of
+this macro generates a {\tt defclass} form defining the class. 
 
 {\samepage
 {\large {\bf defcontact \hfill Macro}} 
@@ -2032,13 +1772,13 @@ this macro generates a {\tt defclass} form defining the class.
 \parbox[t]{6.125in}{
 Generates a {\tt defclass} form defining the {\tt
 class-name} class, using the {\tt class-name}, {\tt superclasses}, {\tt
-slots}, and {\tt options}.  
+slots}, and {\tt options}. 
 }
 
 \parbox[t]{6.125in}{
 {\tt class-name}
 \begin{quote}
-A class name symbol.   
+A class name symbol.  
 \end{quote}
 }
  
@@ -2063,7 +1803,7 @@ A list of slot specifications for use in a {\tt defclass} form.
 \parbox[t]{5.75in}{
 Each  remaining argument gives a class option for {\tt class-name}.
 Each class option is a list of the form {\tt ({\em option-keyword
-args*})}.  Valid class options are: 
+args*})}. Valid class options are: 
 
 \begin{center}
 \begin{tabular}{lp{2.5in}}
@@ -2098,7 +1838,7 @@ is either a resource name symbol or a list of the following form.
 
 
 {\em resource-name} and {\em resource-class} are the resource name and class
-symbols used to access a contact resource.  
+symbols used to access a contact resource. 
 \index{resource, name}\index{resource, class}
 If {\tt :class} is not given, then
 the {\em resource-name} is also used as the class name.
@@ -2119,14 +1859,14 @@ slot.
 Note that the {\tt :resources} option of {\tt defcontact} can play the
 same role in contact initialization as the {\tt :default-initargs}
 option of {\tt defclass} and that {\tt defcontact} therefore does not
-accept {\tt :default-initargs} as a valid option.  Instead of {\tt
+accept {\tt :default-initargs} as a valid option. Instead of {\tt
 (:default-initargs name value)}, a programmer should specify {\tt
 (:resources (name :initform value))}.
 
 
 
 
-\CHAPTERL{Input}{ch:input}
+\chapterL{Input}{ch:input}
 \index{input}\index{contact-display}
 CLUE defines the {\tt contact-display} object type, which represents the
 basic input processing of an interactive application and which supports the {\bf
@@ -2200,13 +1940,13 @@ The {\tt contact-display} object
 type could be implemented as a CLOS class, but its specification is intended to
 permit other representations as well. A class definition may not be necessary,
 since subclassing of this object type is not expected.
-}.  An application will usually create a single {\tt contact-display} which
+}. An application will usually create a single {\tt contact-display} which
 represents the connection through which requests are sent to an X server\index{X
 Window System, server} and input events are received.
 
 The basic operations on a {\tt contact-display} are listed below and are
 described in detail in other
-parts of this document.  
+parts of this document. 
 \begin{itemize}
 \item Read and process an input event (see Section~\ref{ch:event-loop}).
 \item Read character input from interactive stream contacts (see
@@ -2215,7 +1955,7 @@ Section~\ref{ch:multiple-stream-input}).
 Section~\ref{ch:global-event-processing}).
 \item Inquire the available display roots (see Section~\ref{ch:roots}).
 \item Inquire or change the default display root (see
-Section~\ref{ch:roots}).  
+Section~\ref{ch:roots}). 
 \end{itemize}
 
 The {\tt open-contact-display} function is used to create a {\tt
@@ -2260,7 +2000,7 @@ specified by {\tt host} and {\tt display}.
 The application-specific name of the {\tt contact-display}. Technically,
 this is an
 application resource name symbol which is the top-level component of the
-complete resource name for each application contact.  See
+complete resource name for each application contact. See
 Section~\ref{ch:complete-names} for a discussion of complete resource names.
 \end{quote}
 
@@ -2272,7 +2012,7 @@ Section~\ref{ch:complete-names} for a discussion of complete resource names.
 The application-specific class of the {\tt contact-display}. Technically,
 this is an
 application resource class symbol which is the top-level component of the
-complete resource class for each application contact.  See
+complete resource class for each application contact. See
 Section~\ref{ch:complete-names} for a discussion of complete resource
 classes.
 If omitted, this  defaults to the {\tt contact-display} name.
@@ -2313,7 +2053,7 @@ special variable {\tt
 A list of before actions which define application event
 preprocessing. 
 \index{before action}\index{actions, before} 
-See Section~\ref{ch:before-actions}.  
+See Section~\ref{ch:before-actions}. 
 \end{quote}
 
 }\end{flushright}
@@ -2403,13 +2143,13 @@ Used by {\tt open-contact-display} as the default host display id.
 
 \SAMEL{Events}{ch:events}
 Input from an X server\index{X Window System, server} arrives
-asynchronously in the form of {\bf input events}\index{event}.  
+asynchronously in the form of {\bf input events}\index{event}. 
 The basic set of input events and their contents are defined by the X Window
 System protocol\index{X Window System, events}.
 
 CLUE uses the {\tt event} class to represent an input event as an
 object. The {\tt event} data structure has a slot for each value that appears in
-any X input event (i.e.  each
+any X input event (i.e. each
 keyword declared by a {\tt xlib:declare-event} form in CLX). 
 For any actual input event, only a subset of the slots of the
 corresponding {\tt event} object will be meaningful; the irrelevant slots
@@ -2497,7 +2237,7 @@ the {\tt event-keysym} does not correspond to any Common Lisp character.
 {\tt name}
 \begin{quote}
 For a {\tt :timer} event, this slot contains the symbol which is the name of the
-timer.  See Section~\ref{ch:timers}.
+timer. See Section~\ref{ch:timers}.
 \end{quote}
 
 }\end{flushright}
@@ -2514,11 +2254,11 @@ the given {\tt event} which is performed by all instances of a contact class.
 Actions are often generic functions with methods defined for
 specific contact classes.
 All responses of a CLUE application to its user input are occur via
-actions.  Typically, actions invoke contact callbacks\index{callback} in
+actions. Typically, actions invoke contact callbacks\index{callback} in
 order to report the results of user input back to the application.
 
 In general, an action represents a well-defined contact behavior that
-might be done in response to {\em any} event.  Contact programmers and
+might be done in response to {\em any} event. Contact programmers and
 users can cooperate in defining how user events are bound to contact
 actions (see Section~\ref{ch:event-translation}). In some cases,
 however, an action may be designed to handle a very specific event type.
@@ -2734,14 +2474,14 @@ contact instances.\index{input, global}
 A {\bf before action}\index{before action}\index{actions, before}
 \index{actions} of a {\tt contact-display} is an action which is called
 when an event is dispatched to a contact, but before any other contact input
-processing is performed.  Before actions are useful for implementing
+processing is performed. Before actions are useful for implementing
 various kinds of application-dependent event preprocessing. For example, an
 application could define a before action for the {\tt contact} class that will
 record every event in a log file. 
 
 Associated with a {\tt contact-display} is a list of before actions. 
 Each event received by a {\tt contact-display} is compared with every element of
-its before actions list.  If {\tt c} is the class for which the before
+its before actions list. If {\tt c} is the class for which the before
 action is defined, and if {\tt contact} is the contact instance to which the
 event has been dispatched, then the before action is called if {\tt (typep
 contact c)} is true.
@@ -2770,9 +2510,9 @@ contact-display}.
 
 
 \begin{flushright} \parbox[t]{6.125in} { Adds a new before action for the given
-{\tt class} to the {\tt contact-display}.  The {\tt action} replaces any
-existing before action with the same name and class.  Any {\tt arguments} given
-will be passed to the {\tt action} when it is called.  The {\tt arguments} must
+{\tt class} to the {\tt contact-display}. The {\tt action} replaces any
+existing before action with the same name and class. Any {\tt arguments} given
+will be passed to the {\tt action} when it is called. The {\tt arguments} must
 correspond to the lambda-list of the {\tt action} function.
 
 }\end{flushright}
@@ -2882,7 +2622,7 @@ After an event has been read, the following algorithm is used.
 \begin{itemize}
 \item  The contact receiving the event is determined.
 \item  All  before actions\index{before action}\index{actions, before} defined
-for subclasses of the contact's class are called.  
+for subclasses of the contact's class are called. 
 \item The contact's {\tt handle-event}
 method is called. The {\tt handle-event} method invokes the process of
 ``event translation,''\index{event, translation}
@@ -2897,7 +2637,7 @@ Section~\ref{ch:event-translation}) for a complete description of event translat
 A complex operation, such as
 presenting a large contact tree, often takes the form of a ``chain reaction,''
 wherein the input events which precipitate from contact actions are processed to
-invoke still more actions and events, etc.  In order to synchronize its user
+invoke still more actions and events, etc. In order to synchronize its user
 interface, an application will sometimes need to wait until the complete chain
 of events has been processed before continuing the event loop.
 This synchronization of event processing is achieved by using the {\tt
@@ -2928,7 +2668,7 @@ using the following algorithm.
 buffered requests and receive any resulting events.
 \item If any events were received, process each of them via {\tt
 (process-next-event contact-display :timeout 0)} and then repeat the previous
-step.  \end{itemize}
+step. \end{itemize}
 
 }\end{flushright}
 
@@ -2983,10 +2723,10 @@ interfaces.
 }
 
 \begin{flushright} \parbox[t]{6.125in}{ Creates a timer with the given {\tt
-name} symbol.  The new timer replaces any existing timer with the same name. The
+name} symbol. The new timer replaces any existing timer with the same name. The
 new timer sends a {\tt :timer} event to the {\tt contact-display}
 associated with the given {\tt contact} each time the specified time {\tt
-interval} (given in seconds) elapses\footnotemark.  Such {\tt :timer} events 
+interval} (given in seconds) elapses\footnotemark. Such {\tt :timer} events 
 are dispatched to the given {\tt contact} and also contain any given application
 {\tt data} (see description of {\tt :timer} event above). The timer {\tt name} is
 returned.
@@ -3088,7 +2828,7 @@ modifier keys required for an {\tt event} to match the event specification.
 \parbox[t]{5.75in}{
 {\em state} is a set which specifies the state of modifier keys: the
 down state for modifier keys which belong to {\em state} and the up
-state for those that do not.  
+state for those that do not. 
 {\em state} defaults to {\tt :none}, which is equivalent to the empty set.
 {\em select} specifies the set of modifier keys whose state is examined
 during matching. {\em select} defaults to {\tt :same}, which means
@@ -3111,7 +2851,7 @@ following conditions are satisfied.
 indicated by {\em state}. 
 \item If there are modifiers keys in {\em state} which do {\em not}
 belong to {\em select}, then at least one of
-them is down.  This is a way to treat such a set of modifiers as
+them is down. This is a way to treat such a set of modifiers as
 ``equivalents'' without requiring a specific state for each of them.
 \end{itemize}
 }
@@ -3143,10 +2883,10 @@ them is down.  This is a way to treat such a set of modifiers as
 \begin{flushright}
 \parbox[t]{5.75in}{
 This form of event specification matches any {\tt :button-press} or {\tt
-:button-release} event with the given state of the modifier keys.  If
+:button-release} event with the given state of the modifier keys. If
 {\em button} is given, then only events with the given button in {\tt
-event-code} are matched.  By default, {\em button} is {\tt :any}, in
-which case the {\tt event-code} is ignored during matching.  }
+event-code} are matched. By default, {\em button} is {\tt :any}, in
+which case the {\tt event-code} is ignored during matching. }
 
 \parbox[t]{5.75in}{
 The {\em select} option operates as described above. The {\em bstate}
@@ -3294,7 +3034,7 @@ is called to validate an event specification list whose first element is
 the {\em keyword-symbol}.
 
 A check function signals an error if the {\tt event-spec} is syntactically
-invalid.  Otherwise, the first return value
+invalid. Otherwise, the first return value
 is a list of the form {\tt ({\em match-function} . {\em
 canonical-event-spec})}. The {\tt car} of this list is a function
 object which is the corresponding match function. The {\tt cdr} of
@@ -3364,7 +3104,7 @@ the form {\tt ({\em action-name argument*})} .
 Thus, each event translation in {\tt event-translations} associates  an event
 specification with one or more actions and, 
 for each action, an optional argument
-list.  The event translations in a contact's {\tt event-translations} slot can
+list. The event translations in a contact's {\tt event-translations} slot can
 be modified by the functions {\tt add-event} and {\tt delete-event}.
 \index{delete-event function}\index{add-event function}  
 
@@ -3395,7 +3135,7 @@ the actions in the event translation is called, using any arguments given, and
 event processing terminates.
 \end{itemize}
 \item If no match is found, then the previous step is repeated for the next
-class in the class precedence list.  
+class in the class precedence list. 
 \end{itemize}
  
 
@@ -3415,15 +3155,15 @@ input behavior shared by all instances of a contact class.
 
 \index{contact, event mask}\index{event mask}
 Most types of events can be received by a contact only if they are selected by
-the contact's {\tt event-mask}.  CLUE automatically initializes a contact's {\tt
+the contact's {\tt event-mask}. CLUE automatically initializes a contact's {\tt
 event-mask} slot to select all event types referenced by its {\tt
-event-translations} slot and its class event translations.  The {\tt event-mask}
+event-translations} slot and its class event translations. The {\tt event-mask}
 is also modified appropriately by {\tt add-event} and {\tt delete-event}.
 As a result, CLUE programmers rarely need to modify a contact's {\tt event-mask}
 slot directly.
 
 CLUE initiates contact event processing by calling the contact's {\tt
-handle-event} method.  By default, this method simply processes an event
+handle-event} method. By default, this method simply processes an event
 according to the contact's event translations and class event
 translations. 
 However, some
@@ -3503,12 +3243,12 @@ Creates an event translation associating the event specification with the given
 action symbols in the
 contact's {\tt event-translations}.
 Each additional argument is either an action name symbol or a list of the form
-{\tt ({\em action-name argument*})}.  
+{\tt ({\em action-name argument*})}. 
 If an event translation for the given event specification already exists, then
 its previous actions are replaced by the new {\tt actions}, without changing its
 position in the {\tt event-translations}. Otherwise, a new event translation is
 created and added as the first element of the {\tt
-event-translations}.  
+event-translations}. 
 }\end{flushright}
 
 {\samepage
@@ -3557,7 +3297,7 @@ contact's {\tt event-translations}.
 Returns a list of {\tt actions} associated with the given {\tt contact} and
 event specification. 
 Each element of the returned  {\tt actions} list is either an action name symbol
-or a list of the form {\tt ({\em action-name argument*})}.  
+or a list of the form {\tt ({\em action-name argument*})}. 
 
 A process similar to that used by {\tt translate-event} is used to locate an
 event translation containing the {\tt event-spec}, either in the {\tt contact}'s
@@ -3646,17 +3386,17 @@ printed.
 \index{event, double-click}\index{double-click event} 
 CLUE provides for the automatic
 recognition of ``double-clicks'' by treating these as specially
-modified {\tt :button-press} or {\tt :button-release} events.  A
+modified {\tt :button-press} or {\tt :button-release} events. A
 ``click'' is a {\tt :button-press} event followed immediately by a {\tt
 :button-release} event for the same button, with no intervening change
 in pointer position\footnotemark\footnotetext{Implementation Note:
 In practice, very small pointer
 movements (``jitter'') should be ignored during double-click processing.} or modifier
-key state.  A ``double-click''
-is a sequence of two clicks of the same button in rapid succession.  The
+key state. A ``double-click''
+is a sequence of two clicks of the same button in rapid succession. The
 definition of a double-click ``event'' is thus time-sensitive; for a
 double-click to be recognized, the time interval between events in the
-sequence cannot exceed a certain maximum.  The {\tt
+sequence cannot exceed a certain maximum. The {\tt
 display-multipress-delay-limit} accessor defines the maximum
 inter-event time
 interval, in milliseconds,
@@ -3667,7 +3407,7 @@ During event translation for a {\tt :button-press} event, CLUE will
 invoke double-click processing when it attempts to match a {\tt
 :button-press} event specification
 containing the {\tt :double-click} keyword (see
-Section~\ref{ch:event-specifications}).  CLUE then
+Section~\ref{ch:event-specifications}). CLUE then
 looks ahead into the event stream, checking for the remainder of the
 double-click sequence. If a double-click is recognized, then the event
 specification is matched, the corresponding actions are invoked with the
@@ -3791,9 +3531,9 @@ multipress sequence.
 }\end{flushright}}
 
 \begin{flushright} \parbox[t]{6.125in}{
-The default multipress timeout verification switch.  When true, timeout
+The default multipress timeout verification switch. When true, timeout
 of multipress events is verified by requesting a
-timestamp from the X server.  When {\tt nil}, multipress handling will
+timestamp from the X server. When {\tt nil}, multipress handling will
 be faster but some double-clicks may be incorrectly interpreted as two
 single-clicks.
 
@@ -3847,23 +3587,23 @@ ignored, with only the most recent event being dispatched to the contact.
 When a contact window becomes visible, an X server will generally divide
 the exposed window region into a set of non-intersecting rectangular
 tiles and will generate a sequence of {\tt :exposure} events, one for
-each tile.  For some contacts, it may be more efficient to perform all
+each tile. For some contacts, it may be more efficient to perform all
 display operations for the entire exposed region at once, rather than
-redisplaying the image for each tile individually.  Exposure
+redisplaying the image for each tile individually. Exposure
 compression, which is controlled by the {\tt compress-exposures} slot,
 is a way for a contact programmer to specify that the contact {\tt
 display} method is called only once for each sequence of {\tt :exposure}
-events representing a newly-visible region.  Initializing the {\tt
+events representing a newly-visible region. Initializing the {\tt
 compress-exposures} slot to {\tt :on} will result in a single {\tt
 :exposure} event being dispatched to the contact, rather than the entire
-sequence.  In this case, the {\tt x}, {\tt y}, {\tt width}, and {\tt
+sequence. In this case, the {\tt x}, {\tt y}, {\tt width}, and {\tt
 height} arguments passed to {\tt display} \index{display method}
 represent the smallest rectangle enclosing the exposed region; this
 rectangle will be larger than the region actually exposed when the
 region is non-rectangular.
 
 
-\CHAPTERL{Contact Hierarchy}{ch:contact-hierarchy}
+\chapterL{Contact Hierarchy}{ch:contact-hierarchy}
 
 \LOWERL{Composites}{ch:composites}
 A contact which is the parent of another contact is known as a
@@ -3876,12 +3616,12 @@ A is B's parent or an ancestor of B's parent.
 
 A composite represents a set of contacts which can be manipulated
 (positioned, presented,
-etc.) as a unit.  A composite is useful whenever several contacts act in concert to provide a
-single component of the application's user interface.  Typical examples include
+etc.) as a unit. A composite is useful whenever several contacts act in concert to provide a
+single component of the application's user interface. Typical examples include
 ``control panels'' and ``dialog boxes'' --- groups of contacts that are presented
-together and are used to make related adjustments to application data.  In some
+together and are used to make related adjustments to application data. In some
 cases, operations on one member of such a structure may change the appearance of
-another.  The composite is the mechanism which allows the operations of its
+another. The composite is the mechanism which allows the operations of its
 members to be coordinated.
 
 The fundamental aspects of the contact parent-child relationship are the same as
@@ -3942,7 +3682,7 @@ Designating a contact as  the composite {\tt focus} does not necessarily redirec
 keyboard events. Rather, the {\tt focus} is the current ``keyboard
 representative'' for the composite; assigning the keyboard focus to the
 composite then usually results in assigning it to the {\tt focus}
-contact.  \end{quote} }\end{flushright}
+contact. \end{quote} }\end{flushright}
 
 \begin{flushright} \parbox[t]{6.125in}{
 {\tt shells}
@@ -4069,11 +3809,11 @@ has several advantages.
 
 
 A request to change the geometry of a contact is forwarded to the contact's
-parent, which actually performs the resulting change.  It is important to
+parent, which actually performs the resulting change. It is important to
 understand that, due to its constraints, a geometry manager may not be able to
-perform a change as requested.  For
+perform a change as requested. For
 example, a request to increase the size of a contact might be refused if its
-geometry manager enforces a maximum size.  If a requested change cannot
+geometry manager enforces a maximum size. If a requested change cannot
 be done, a geometry manager should suggest a slightly different change
 which would be acceptable. Frequently,
 a geometry manager will want a child to compute a suitable geometry for
@@ -4085,7 +3825,7 @@ which are managed.
 \index{managed}\index{contact, managed}
 Any child whose {\tt state} is {\tt :withdrawn} is ignored by a geometry manager. Any
 geometry change to a {\tt :withdrawn} child is performed immediately as
-requested.  
+requested. 
 
 \LOWER{Implementing Geometry Management Policy}
 Geometry management is implemented by the following methods of the
@@ -4128,7 +3868,7 @@ to change the geometry of the
 {\tt contact}.
 If the requested change is approved, then  the first value returned is
 non-{\tt nil}; the remaining return values then give the new geometry of the {\tt
-contact}.  Otherwise, the change is not approved and the first value returned is
+contact}. Otherwise, the change is not approved and the first value returned is
 {\tt nil}; in this case, the remaining return values suggest an acceptable
 compromise geometry.
 If only {\tt nil} is returned, no geometry change is allowed.
@@ -4189,7 +3929,7 @@ See the CLX function {\tt xlib:window-priority} for a description of the {\tt
 priority} and {\tt sibling} arguments.
 If the
 requested change is approved, then the first value returned
-is non-{\tt nil}.  Otherwise, the change is not approved and the first  value returned is
+is non-{\tt nil}. Otherwise, the change is not approved and the first  value returned is
 {\tt nil}; in this case, the remaining return values suggest an acceptable
 compromise request.
 If only {\tt nil} is returned, no geometry change is allowed.
@@ -4233,12 +3973,12 @@ method is expected to make any changes to the geometry or priority of the new
 managed set which are required by the {\tt composite}'s geometry management
 policy. 
 
-{\tt change-layout} is called once when a new composite is realized.  After a
+{\tt change-layout} is called once when a new composite is realized. After a
 composite is realized, {\tt change-layout} is called whenever a managed child is
 created or destroyed or in response to a change in the {\tt state} of a child.
 When {\tt change-layout} is called as a result of the creation of or a change in
 a single child, then that child given as the value of the optional {\tt
-changed-child} argument.  Certain geometry managers may choose to treat the {\tt
+changed-child} argument. Certain geometry managers may choose to treat the {\tt
 changed-child} child specially when enforcing geometry constraints among its
 managed children.
 
@@ -4251,7 +3991,7 @@ managed {\tt child}.
 \SAME{Controlling Geometry Management}
 
 A complex geometry management policy may depend not only on the geometry
-of each composite child, but also on other factors.  For example, a
+of each composite child, but also on other factors. For example, a
 composite which implements a tabular layout could be influenced by
 additional constraints, such as the maximum number of
 columns\footnotemark\footnotetext{In fact, constraint resources defined
@@ -4282,7 +4022,7 @@ any effects on the layout until all changes are complete.
 \begin{flushright} \parbox[t]{6.125in}{ 
 Any side-effects on the layout
 of the {\tt composite} are ignored within the dynamic extent of the {\tt
-body} forms.  For example, all calls to {\tt (change-layout composite)}
+body} forms. For example, all calls to {\tt (change-layout composite)}
 are ignored. If any side-effects were ignored, then {\tt (change-layout
 composite)} is called once after the {\tt body} is completed.
 
@@ -4291,12 +4031,12 @@ composite)} is called once after the {\tt body} is completed.
 
 
 The initial geometry of a contact is also determined by the geometry management
-policy of it parent composite.  Just before a composite is realized, the {\tt
+policy of it parent composite. Just before a composite is realized, the {\tt
 initialize-geometry} function is called to negotiate the initial geometry of all
-descendants of a composite.  This function is called automatically by {\tt
+descendants of a composite. This function is called automatically by {\tt
 update-state}\index{update-state function}
 and rarely needs to be invoked directly by application programmers
-or contact programmers.  In some cases, a CLUE program may call {\tt
+or contact programmers. In some cases, a CLUE program may call {\tt
 initialize-geometry} in order to complete initial geometry management without
 realizing a composite.
 
@@ -4424,7 +4164,7 @@ two ways. First, a {\tt root} typically corresponds to the root window of the
 screen and inherits all of its properties\footnotemark\footnotetext{In some environments,
 a window manager may establish a non-root window as the top-level ``parent
 window'', in which case the {\tt root} will correspond to the ``parent
-window'' instead.}.  
+window'' instead.}. 
 Input received by a root window
 will be dispatched to its {\tt root} contact. Second, the  {\tt xlib:screen} object
 may be accessed as a slot of the {\tt root}.
@@ -4462,7 +4202,7 @@ Alternatively, the default root may be inquired or modified using the
 
 \begin{flushright} \parbox[t]{6.125in}{
 Returns the  {\tt root} of the {\tt contact-display} specified by the
-{\tt screen-index}.  If no {\tt screen-index} is given, then the default
+{\tt screen-index}. If no {\tt screen-index} is given, then the default
 root is returned. Used
 with {\tt setf}, this function is also an accessor for
 changing the default root. Example: {\tt (setf (display-root  
@@ -4542,7 +4282,7 @@ to create a ``top-level''\index{contact, top-level} contact on a specific displa
 \item Define actions and event translations for a {\tt root}
 \footnotemark\footnotetext{However, it is generally bad practice to attach
 application meaning to root window input events, since these are often reserved
-for window managers.}.  
+for window managers.}. 
 \end{itemize}
 
 The {\tt root} class is a subclass of the basic {\tt
@@ -4554,8 +4294,8 @@ but {\tt root}s are different from ordinary composites in several ways.
 \item The geometrical attributes of a {\tt root} cannot be changed.
 \item A {\tt root} is always created automatically when its
 {\tt contact-display} is created. A {\tt root} is never created by an
-application.  \item The {\tt name} of a {\tt root} is
-initialized automatically when it is created.  The initial resource name is {\tt
+application. \item The {\tt name} of a {\tt root} is
+initialized automatically when it is created. The initial resource name is {\tt
 :SCREEN-}{\em n}, where {\em n} is the index of the
 {\tt xlib:screen} object in {\tt (xlib:display-roots
 contact-display)}~\footnotemark\footnotetext{n $\equiv$ \tt (position screen
@@ -4568,44 +4308,44 @@ contact-display)}~\footnotemark\footnotetext{n $\equiv$ \tt (position screen
 \SAMEL{Shells}{ch:shells}
 
 A contact whose parent is a root is called a {\bf
-top-level}\index{contact, top-level} contact.  A top-level contact is usually
+top-level}\index{contact, top-level} contact. A top-level contact is usually
 a composite at the top of a hierarchy
-of other contacts created by an application program.  A CLUE application program
+of other contacts created by an application program. A CLUE application program
 will
 normally create at least one top-level contact which encapsulates user
-interaction for the application.  More complex applications will often use multiple
-top-level contacts, each representing distinct user tasks.  Top-level contacts
+interaction for the application. More complex applications will often use multiple
+top-level contacts, each representing distinct user tasks. Top-level contacts
 play a special role in a user interface, because only top-level windows are
 subject to a user's operations for window management (performed via a window
 manager client) and for session management (performed via a session manager
-client).  Window managers, session managers, and the conventions for
+client). Window managers, session managers, and the conventions for
 intercommunication among these clients are described in \cite{icccm}.
 \index{window manager}\index{session manager}
 
 In addition, a top-level contact is often used as a {\bf pop-up}\index{pop-up}
 --- for example, a menu which ``pops up'' when a command button contact is
 ``pressed.'' A top-level pop-up ``belongs'' to another contact without being
-constrained by it in position, size, or stacking order.  A top-level contact
+constrained by it in position, size, or stacking order. A top-level contact
 therefore has both a parent, which is always a root, and an {\bf
 owner}\index{owner}\index{shell, owner}, from which it may inherit resources
 values and other properties.
 
 In order to simplify top-level contact programming, CLUE defines a composite
-subclass called {\bf shells}\index{shell}.  A shell is a top-level contact which
-merely acts as an invisible ``container'' for exactly one child.  From an
+subclass called {\bf shells}\index{shell}. A shell is a top-level contact which
+merely acts as an invisible ``container'' for exactly one child. From an
 application programmer's point of view, the child of a shell is really the
-effective top-level contact.  Programmer changes to the size of the child are
+effective top-level contact. Programmer changes to the size of the child are
 automatically applied to the shell, and user changes to the size of a shell are
-automatically applied to its child.  The slots of a shell instance contain
+automatically applied to its child. The slots of a shell instance contain
 values which form the window properties used to communicate with window managers
-and session managers.  See \cite{icccm} for a complete discussion of the
+and session managers. See \cite{icccm} for a complete discussion of the
 conventions for client window properties.\index{property, for interclient
 communication}\index{interclient communication}
 
 Application programmers rarely need to operate on a shell, other than to access
-its standard property values and to change its state.  In return, shells
+its standard property values and to change its state. In return, shells
 encapsulate the responsibilities required of top-level windows and conveniently
-integrate top-level pop-up's into the resource name hierarchy.  All top-level
+integrate top-level pop-up's into the resource name hierarchy. All top-level
 contacts should be shells; although this is not strictly required, the behavior
 of non-shell top-level contacts is not guaranteed to be correct.
 
@@ -4647,7 +4387,7 @@ of interaction with window managers and session managers:
 
 A {\tt shell} is a {\tt composite} that has an owner.
 When a shell is created, the {\tt :parent} argument to {\tt
-make-contact}\index{make-contact functions} defines its owner.  The relationship
+make-contact}\index{make-contact functions} defines its owner. The relationship
 between a shell and its
 owner is similar to the one between a child and its parent in the
 following ways.
@@ -4681,8 +4421,8 @@ If the {\tt :parent} argument is a contact, then:
 
 A shell whose parent and owner are identical is called a {\bf root
 shell}.\index{root shell}\index{shell, root} The default state of a root
-shell is {\tt :mapped}.  Otherwise, the default state of a shell is {\tt
-:withdrawn}.  These defaults are convenient in the typical case of an
+shell is {\tt :mapped}. Otherwise, the default state of a shell is {\tt
+:withdrawn}. These defaults are convenient in the typical case of an
 application with a single root shell and one or more pop-up
 shells.\index{shell, default state}
 
@@ -4716,10 +4456,10 @@ Mapping (or ``popping up'') a shell means setting its state to {\tt
 \index{shell, popping up} 
 Unmapping (or ``popping down'')\index{shell,
 popping down} a shell means setting its state to {\tt :iconic} or {\tt
-:withdrawn}.  Mapping a shell causes the {\tt shell-mapped} function to be called.
+:withdrawn}. Mapping a shell causes the {\tt shell-mapped} function to be called.
 The primary method for {\tt shell-mapped} invokes the {\tt :map} callback of the
-shell.  Similarly, unmapping a shell calls the {\tt shell-unmapped} function,
-whose primary method invokes the {\tt :unmap} callback of the shell.  The {\tt
+shell. Similarly, unmapping a shell calls the {\tt shell-unmapped} function,
+whose primary method invokes the {\tt :unmap} callback of the shell. The {\tt
 :map} and {\tt :unmap} callbacks allow the application programmer to change the
 contents of a shell instance before it is mapped or after it is unmapped. The {\tt
 shell-mapped} and {\tt shell-unmapped} functions are management functions that may
@@ -4742,7 +4482,7 @@ behavior for all instances of a shell subclass.
 }\end{flushright}}
 
 \begin{flushright} \parbox[t]{6.125in}{
-Called before the {\tt shell} becomes {\tt :mapped}.  The primary method invokes
+Called before the {\tt shell} becomes {\tt :mapped}. The primary method invokes
 the {\tt :map} callback of the {\tt shell}.
 
 }\end{flushright}
@@ -4763,7 +4503,7 @@ the {\tt :map} callback of the {\tt shell}.
 }\end{flushright}}
 
 \begin{flushright} \parbox[t]{6.125in}{
-Called after the {\tt shell} is unmapped.  The primary method invokes
+Called after the {\tt shell} is unmapped. The primary method invokes
 the {\tt :unmap} callback of the {\tt shell}.
 
 }\end{flushright}
@@ -4834,8 +4574,8 @@ conventions for top-level window borders in \cite{icccm}.
 position of the shell to move the shell/content with respect to the root.
 
 \item {\bf Changing the priority of the content} is meaningless and is never
-approved.  Change the priority of the shell to restack the shell/content with
-respect to other top-level windows.  See the conventions for top-level window
+approved. Change the priority of the shell to restack the shell/content with
+respect to other top-level windows. See the conventions for top-level window
 priority in \cite{icccm}.
 
 \end{itemize}
@@ -4843,10 +4583,10 @@ priority in \cite{icccm}.
 \SAME{Override Shells}
 
 The {\tt override-shell} class is a subclass of shells which override the window
-manager.  Use {\tt override-shell} to contain pop-up menus and other temporary
-objects which the user can never resize, etc.  The {\tt :iconic} state is
+manager. Use {\tt override-shell} to contain pop-up menus and other temporary
+objects which the user can never resize, etc. The {\tt :iconic} state is
 meaningless for an {\tt override-shell}, which therefore can never assume this
-state.  Setting the state of an {\tt override-shell} to {\tt :iconic} causes it
+state. Setting the state of an {\tt override-shell} to {\tt :iconic} causes it
 to become {\tt :withdrawn} instead.\index{override-shell, changing state}
 
 {\samepage 
@@ -4872,7 +4612,7 @@ to become {\tt :withdrawn} instead.\index{override-shell, changing state}
 \SAME{Window Manager Shells}
 
 The {\tt wm-shell} class is a subclass of shells which interact with the
-window manager.  The accessors defined by the {\tt wm-shell} class allow
+window manager. The accessors defined by the {\tt wm-shell} class allow
 the application programmer to initialize and modify the standard
 top-level window properties used to communicate with the window
 manager.\index{window manager} See \cite{icccm}, Section 4.1.2.
@@ -4880,15 +4620,15 @@ manager.\index{window manager} See \cite{icccm}, Section 4.1.2.
 \index{interclient communication}
 
 Some standard top-level window properties are aggregates consisting of a set of
-component values.  {\tt :wm\-\_normal\-\_hints} contains a set of values which
-specify the preferred window geometry.  {\tt :wm\_hints} contains values that
+component values. {\tt :wm\-\_normal\-\_hints} contains a set of values which
+specify the preferred window geometry. {\tt :wm\_hints} contains values that
 specify other preferences for window manager interaction, such as the appearance
-of the window's icon.  For these properties, the {\tt wm-shell} class also
+of the window's icon. For these properties, the {\tt wm-shell} class also
 provides functions to access each component value individually.\index{property,
 :wm\_normal\_hints}\index{property, :wm\_hints} 
 
 
-{\tt wm-shell} should not be instantiated directly.  Instead, window
+{\tt wm-shell} should not be instantiated directly. Instead, window
 manager shells are always instances of one of the {\tt wm-shell}
 subclasses --- {\tt transient-shell} or {\tt top-level-shell}.
 
@@ -5138,7 +4878,7 @@ body of a {\tt with-wm-properties} macro.
 }\end{flushright}}
 
 \begin{flushright} \parbox[t]{6.125in}{ Returns and (with {\tt setf}) changes
-the initial alignment gravity of the {\tt wm-shell}.  If {\tt nil}, then the alignment gravity
+the initial alignment gravity of the {\tt wm-shell}. If {\tt nil}, then the alignment gravity
 is undefined. Together with the initial values for
 {\tt x} and {\tt y}, the alignment gravity controls the preferred initial
 position of the {\tt wm-shell}. The alignment gravity specifies the position on
@@ -5173,8 +4913,8 @@ body of a {\tt with-wm-properties} macro.
 
 \begin{flushright} \parbox[t]{6.125in}{
 Returns and (with {\tt setf}) changes the preferred maximum aspect ratio of the
-{\tt wm-shell}.  If {\tt nil}, then the maximum aspect ratio is undefined. The aspect ratio of a
-window is {\tt (/ width height)}.  
+{\tt wm-shell}. If {\tt nil}, then the maximum aspect ratio is undefined. The aspect ratio of a
+window is {\tt (/ width height)}. 
 
 With {\tt setf}, this function changes the {\tt :wm\_normal\_hints} property of
 the {\tt wm-shell} immediately, unless it appears in the dynamic extent of the
@@ -5256,8 +4996,8 @@ body of a {\tt with-wm-properties} macro.
 
 \begin{flushright} \parbox[t]{6.125in}{
 Returns and (with {\tt setf}) changes the preferred minimum aspect ratio of the
-{\tt wm-shell}.  If {\tt nil}, then the minimum aspect ratio is undefined. The aspect ratio of a
-window is {\tt (/ width height)}.  
+{\tt wm-shell}. If {\tt nil}, then the minimum aspect ratio is undefined. The aspect ratio of a
+window is {\tt (/ width height)}. 
 
 With {\tt setf}, this function changes the {\tt :wm\_normal\_hints} property of
 the {\tt wm-shell} immediately, unless it appears in the dynamic extent of the
@@ -5468,10 +5208,10 @@ body of a {\tt with-wm-properties} macro.
 }\end{flushright}}
 
 \begin{flushright} \parbox[t]{6.125in}{ Returns and (with {\tt setf}) changes
-the keyboard input focus model of the {\tt wm-shell}.  See \cite{icccm}, Section
-4.1.7.  If {\tt :on}, then the {\tt wm-shell} or its descendants handle keyboard
+the keyboard input focus model of the {\tt wm-shell}. See \cite{icccm}, Section
+4.1.7. If {\tt :on}, then the {\tt wm-shell} or its descendants handle keyboard
 input and expect the window manager to set the input focus to the {\tt
-wm-shell}.  If {\tt :off}, then the window manager should not set the input
+wm-shell}. If {\tt :off}, then the window manager should not set the input
 focus to the {\tt wm-shell}. If {\tt nil}, then the preferred window manager
 treatment of keyboard focus is undefined. 
 
@@ -5494,7 +5234,7 @@ for
 their owners. The exact meaning of this relationship is defined by the
 window manager, but typically a window manager will unmap a {\tt
 transient-shell} when its owner becomes unmapped or iconified and will
-not allow a {\tt transient-shell} to be individually iconified.  A window
+not allow a {\tt transient-shell} to be individually iconified. A window
 manager may also display a {\tt transient-shell} with distinctive
 ``decoration.''
 
@@ -5518,7 +5258,7 @@ manager may also display a {\tt transient-shell} with distinctive
 \SAME{Top-Level Shells}
 
 The {\tt top-level-shell} class is the base class of normal top-level
-shells, with full window manager interaction.  A root shell is typically
+shells, with full window manager interaction. A root shell is typically
 a {\tt top-level-shell}.\index{shell, root}
 
 {\samepage 
@@ -5766,7 +5506,7 @@ property}\index{property, :wm\_command}
 An application programmer controls the way {\tt transient-shell}, {\tt
 top-level-shell}, and {\tt top-level-session} objects interact with the
 window manager and the session manager by using accessors defined by
-these classes to change window property values.  In general the effect of using
+these classes to change window property values. In general the effect of using
 such an accessor is to send a {\tt change-property} request which modifies one
 of the standard window properties used for interclient
 communication.\index{property, for interclient communication} 
@@ -5806,9 +5546,9 @@ Application
 programs may communicate with other clients, such as the window manager and the
 session manager \index{window manager}\index{session manager} using standard
 protocols selected by the {\tt wm-protocols-used}\index{wm-protocols-used method}
-accessor.  See \cite{icccm} for a description of the standard protocols for
-interclient communication.  These protocols involve {\tt :client-message} events
-which are sent by the window/session manager to an application {\tt shell}.  The
+accessor. See \cite{icccm} for a description of the standard protocols for
+interclient communication. These protocols involve {\tt :client-message} events
+which are sent by the window/session manager to an application {\tt shell}. The
 {\tt wm-message} structure defines accessor functions which may be used to
 interpret the
 {\tt data} found in any standard {\tt :client-message} event sent by the
@@ -6002,8 +5742,8 @@ Returns non-{\tt nil} if {\tt composite} is an ancestor of {\tt contact}.
 
 \begin{flushright} \parbox[t]{6.125in}{ Translates the position given by {\tt
 from-x} and {\tt from-y} relative to the {\tt from} contact into a position
-relative to the {\tt to} contact.  By default, {\tt to} is {\tt (contact-root
-from)}.  If {\tt from} and {\tt to} are on different screens, then {\tt nil} is
+relative to the {\tt to} contact. By default, {\tt to} is {\tt (contact-root
+from)}. If {\tt from} and {\tt to} are on different screens, then {\tt nil} is
 returned.
 
 }\end{flushright}
@@ -6101,7 +5841,7 @@ Returns non-{\tt nil} if the parent of {\tt contact} is a {\tt root}.
 
 }\end{flushright}
 
-\CHAPTERL{Graphics Contexts}{ch:gcontexts}
+\chapterL{Graphics Contexts}{ch:gcontexts}
 
 \index{gcontext}
 Clients of the X Window System\index{X Window System, graphics context}
@@ -6119,7 +5859,7 @@ object of type {\tt xlib:gcontext} and also defines a simple caching
 scheme which expedites the modification and inquiry of {\tt
 xlib:gcontext} attributes.
 CLUE provides support for more efficient sharing of graphics context
-objects among several components of the user interface.  Contact
+objects among several components of the user interface. Contact
 programmers are still free to adopt various policies for sharing
 graphics contexts, including hierarchical inheritance or no sharing at
 all.
@@ -6216,7 +5956,7 @@ attributes and would use constant defaults for any other graphical
 attributes.
 This is an example of a ``transparent sharing'' policy, since the
 programmer is not concerned with which {\tt xlib:gcontext} objects are
-used.  Only one {\tt xlib:gcontext} object containing the required
+used. Only one {\tt xlib:gcontext} object containing the required
 attributes needs to be created, and sharing is accomplished
 automatically via {\tt using-gcontext}'s cache.
 
@@ -6275,12 +6015,12 @@ this graphics context directly.
 \end{center}}
 
 In this case, {\tt xlib:create-gcontext} must be called to compute a value for the
-{\tt gcontext} slot.  Any sharing of {\tt xlib:gcontext} objects among
+{\tt gcontext} slot. Any sharing of {\tt xlib:gcontext} objects among
 contacts must be controlled  explicitly by the programmer, and changes to shared
 graphics contexts will have side-effects.
 
 
-\CHAPTERL{Resource Management}{ch:resource-management}
+\chapterL{Resource Management}{ch:resource-management}
 Users need a way to specify preferences for various values of the user interface
 (e.g. colors, fonts, title strings, etc.). Applications, too, need a
 consistent method
@@ -6288,7 +6028,7 @@ for determining the default interface values that are specific to them. It also
 is useful if application interface values can be modified by a user
 ``externally,'' without change to the application program. For example, this
 capability can make it easy to change the color scheme of a user
-interface.  
+interface. 
 
 In CLX, such interface values
 are referred to as {\bf resources}\index{resource}. CLX defines functions for
@@ -6324,10 +6064,10 @@ These resource bindings specify that the background color resource of
 {\tt mail}'s {\tt reply} button has the value {\tt green} on {\tt screen-1}, that
 the background color for the rest of the {\tt mail} application is always {\tt
 red} on all screens, and that, in general, the background color for all {\tt button}
-contacts is {\tt blue}.  Thus, the name in a resource binding is a list
+contacts is {\tt blue}. Thus, the name in a resource binding is a list
 of symbols (or strings) which are hierarchically related in a way that
 corresponds to
-a path down a parent-child tree of contacts.  The name can be a partial
+a path down a parent-child tree of contacts. The name can be a partial
 (or incomplete) path, can use ``wildcarding'' for partial paths, and can include both
 resource names and contact class symbols at any position.
 
@@ -6462,7 +6202,7 @@ with the inheritance classes of a contact. The complete resource class depends
 on the parent-child structure of the contact hierarchy and can change at run
 time. The inheritance class of the contact (its ``class precedence list'') is
 fixed at compile
-time.}.  Complete resource name and class lists thus have the same length. 
+time.}. Complete resource name and class lists thus have the same length. 
 
 The names of the resources used by a contact are defined by the contact class
 and are given by the resource specification list \index{resource, specification}
@@ -6480,7 +6220,7 @@ to a {\tt contact-display}, the ``top-level'' complete resource name component
 is a resource name symbol associated with the {\tt
 contact-display}. Since an application usually uses a single {\tt
 contact-display}, this name is usually a symbol which identifies the
-application itself.  This name is given as the value of the {\tt
+application itself. This name is given as the value of the {\tt
 :name} keyword argument to the {\tt open-contact-display} function. 
 \index{open-contact-display function}
 In addition,
@@ -6540,7 +6280,7 @@ actually stored in a resource database. Conversion functions may be invoked
 to return a representation type different from the one stored.
 
 The representation type used for a contact resource is defined by the {\tt
-:type} option of its resource specification in the {\tt defcontact}.  During
+:type} option of its resource specification in the {\tt defcontact}. During
 contact initialization, a contact resource value read from a resource
 database by {\tt make-contact}
 \index{make-contact function}
@@ -6548,7 +6288,7 @@ is automatically converted
 to its specified representation type.
 
 CLUE performs resource representation type conversion by calling the
-{\tt convert} function.  
+{\tt convert} function. 
 \index{resource, type conversion}
 CLUE defines methods for the {\tt convert} function to handle all standard
 conversions. 
@@ -6592,7 +6332,7 @@ representation may depend upon attributes of a display, a screen, or even the
 contact itself. 
 
 The primary method for {\tt convert} is capable of converting any {\tt
-read}-able string representation of a Common Lisp data type.  When the {\tt
+read}-able string representation of a Common Lisp data type. When the {\tt
 value} type is {\tt xlib:stringable}, this method uses {\tt read-from-string};
 if the result satisfies the {\tt type,} then it is used. The primary {\tt
 convert} method also handles {\tt type} specifiers of the form {\tt (or {\em
@@ -6646,7 +6386,7 @@ top-down, parent-child hierarchy of resource names/classes.
 
 
 The intent of the lookup  algorithm is to formalize an
-intuitive notion of ``the closest match''.  
+intuitive notion of ``the closest match''. 
 \begin{itemize} 
 \item Precedence is given to a  match which begins ``higher'' in the
 parent-child contact hierarchy. This allows a resource binding with a partial
@@ -6661,7 +6401,7 @@ specific than a class match.
 The matching of resource names may be precisely defined by the {\tt match-p}
 function shown in Figure~\ref{fig:match-p}. {\tt match-p} tests if a partial
 name matches a complete
-name/class.  If it does, then the value returned is a numerical score
+name/class. If it does, then the value returned is a numerical score
 representing the closeness of the match (the greater the score, the closer the
 match). Comparison of names uses a function called {\tt same-name-p}, which uses
 case-insensitive comparison if either name is a symbol, but  uses
@@ -6684,7 +6424,7 @@ case-sensitive comparison if both names are strings.
       ((or (null partial-name)                          ;Partial name is fully-matched.
            (> (length partial-name) (length names))     ;A match is no longer possible.
            no-exact-match)                              ;...and can't match wildcard.
-       (when (null partial-name) score))                ;Return score, if match.      
+       (when (null partial-name) score))                ;Return score, if match.     
     (let ((name    (car names))
           (class   (car classes))
           (partial (car partial-name)))
@@ -6695,7 +6435,7 @@ case-sensitive comparison if both names are strings.
       (when
         (cond
           ((same-name-p name  partial) (incf score 2))  ;Name match worth 2 points. 
-          ((same-name-p class partial) (incf score 1))  ;Class match worth 1 points     .        
+          ((same-name-p class partial) (incf score 1))  ;Class match worth 1 points     .       
           ((setq no-exact-match exact-matching-p) nil)) ;No match unless wildcarding.
           ; Otherwise, matching fails but we're wildcarding: just try next name/class.
                        
@@ -6800,7 +6540,7 @@ is determined by the contents of the resource database (given by the value of th
 function
 \index{make-contact function}(see Section~\ref{ch:creation}).
 
-If {\tt contact} is a string, then it is assumed to be a host name.  In this
+If {\tt contact} is a string, then it is assumed to be a host name. In this
 case, resources are returned for the default {\tt root} of a {\tt
 contact-display} connected to this host.
 
@@ -6856,10 +6596,10 @@ The {\tt class-constraints} function may be used to return the list of
 constraint resources defined by a contact class.
 
 Constraint resources allow a parent composite to ``attach'' resources to
-its children without the knowledge of the children themselves.  More
+its children without the knowledge of the children themselves. More
 precisely, the set of constraint resources belonging to a contact is
 defined by the programmer of the {\em parent} class, not the programmer
-of the contact's class.  Constraint resources are typically used to
+of the contact's class. Constraint resources are typically used to
 control the parent's geometry management policy. The {\tt
 contact-constraint} macro may be used to return or change the value of a
 contact constraint resource. 
@@ -6914,10 +6654,10 @@ resource of the {\tt contact}.
 
 
 
-\CHAPTERL{Interactive Streams}{ch:interactive-stream}
+\chapterL{Interactive Streams}{ch:interactive-stream}
 CLUE defines a {\bf interactive stream contact}\index{interactive-stream}, an object
 which behaves like
-a Common Lisp input/output character stream.  An interactive stream
+a Common Lisp input/output character stream. An interactive stream
 contact is an instance of the contact class {\tt interactive-stream} and may
 be given by the application programmer as a stream argument to Common
 Lisp I/O functions such as {\tt read},
@@ -7392,7 +7132,7 @@ In the stream I/O model, an interactive application exchanges character data
 with an {\tt interactive-stream} contact\index{interactive-stream}. 
 The stream I/O model represents applications which use a simple character-based
 style of user interaction and do not rely upon additional input from
-pointer devices.  Such applications have the following generic structure.
+pointer devices. Such applications have the following generic structure.
 \begin{itemize}
 \item Create and open a stream.
 \item Perform application initialization.
@@ -7449,7 +7189,7 @@ specifies the type of {\tt interactive-stream} to return.
 }\end{flushright}
 
 
-\CHAPTER{Acknowledgements} 
+\chapter{Acknowledgements} 
 We are indebted to the following individuals, whose
 careful reading and insightful suggestions have considerably improved the design
 of CLUE and the clarity of this document.
@@ -7465,7 +7205,7 @@ Dan Stenger     &       Texas Instruments \\
 \end{tabular}
 
 By now, the use of CLUE software has grown beyond the scope of our own efforts
-and has benefited from the contributions of many other programmers.  We would
+and has benefited from the contributions of many other programmers. We would
 particularly like to thank the following CLUE users for helping to make the
 public implementation of CLUE more useful for all of us.
 
@@ -7534,10 +7274,9 @@ Burlington, MA, 1984.
 \end{thebibliography}
 
 
-\begin{theindex}
-\input{clue.index}
-\end{theindex}
+\printindex
 
+\end{sloppy}
 \end{document}
 
 
