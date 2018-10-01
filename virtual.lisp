@@ -1,42 +1,30 @@
 ;;; -*- mode:lisp; Package:CLUEI; Syntax:COMMON-LISP; Base:10; Lowercase:T -*-
 
+;;; Texas Instruments Incorporated
+;;; P.O. BOX 149149
+;;; Austin, Texas 78714-9149
 ;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 149149
-;;;			       AUSTIN, TEXAS 78714-9149
+;;; Copyright (C)1989,1990 Texas Instruments Incorporated.
 ;;;
-;;; Copyright (C)1987,1988,1989,1990 Texas Instruments Incorporated.
+;;; Permission is granted to any individual or institution to use,
+;;; copy, modify, and distribute this software, provided that this
+;;; complete copyright and permission notice is maintained, intact, in
+;;; all copies and supporting documentation.
 ;;;
-;;; Permission is granted to any individual or institution to use, copy, modify,
-;;; and distribute this software, provided that this complete copyright and
-;;; permission notice is maintained, intact, in all copies and supporting
-;;; documentation.
-;;;
-;;; Texas Instruments Incorporated provides this software "as is" without
-;;; express or implied warranty.
-;;;
+;;; Texas Instruments Incorporated provides this software "as is"
+;;; without express or implied warranty.
 
-;;;
-;;; Change history:
-;;;
-;;;  Date	Author	Description
-;;; -------------------------------------------------------------------------------------
-;;; 10/14/87	LGO	Created
 
 (in-package "CLUEI")
 
-(export '( virtual
-	  virtual-composite
-	  ))
 
-;; These are methods that duplicate the xlib draw-rectangle, draw-rectangle and clear-area
-;; functions.  I'm not happy with the names, please mail suggestions to clue-review@dsg.csc.ti.com
-(export '(rectangle glyphs clear))
+;; These are methods that duplicate the xlib draw-rectangle,
+;; draw-rectangle and clear-area functions. I'm not happy with the
+;; names, please mail suggestions to clue-review@dsg.csc.ti.com
 
 (defcontact virtual (basic-contact)
   ()
-  (:documentation "A contact without a window")
-  )
+  (:documentation "A contact without a window"))
 
 (defmethod (setf contact-state) (state (contact virtual))
   (check-type state (member :withdrawn :managed :mapped))
@@ -54,14 +42,14 @@
     (unless (realized-p parent)
       (realize parent)))
   ;; Use the PARENT's window
-  (setf (window-id contact) (window-id (contact-parent contact))))
+  (setf (xlib:window-id contact) (xlib:window-id (contact-parent contact))))
 
 (defmethod destroy ((contact virtual))
   ;; Destroy a contact and all its resources
   (when (and (realized-p contact) 	 ;; only destroy realized windows once
 	     (contact-parent contact))   ;; Don't destroy screen
     (setf (contact-state contact) :withdrawn)
-    (setf (window-id contact) -1)))
+    (setf (xlib:window-id contact) -1)))
 
 (defmethod accept-focus-p ((contact virtual))
   "Returns non-nil when CONTACT is willing to become the keyboard input focus"
@@ -107,13 +95,10 @@
 		:width (or width contact-width) :height (or height contact-height)
 		:exposures-p exposures-p)))
 
-;;-----------------------------------------------------------------------------
-
 (defcontact virtual-composite (composite)
-  ((mouse-contact :type (or null virtual) :accessor mouse-contact) ;; Set to the virtual window the mouse is in
-   )
-  (:documentation "A composite contact that may have virtual children")
-  )
+  ;; Set to the virtual window the mouse is in
+  ((mouse-contact :type (or null virtual) :accessor mouse-contact) )
+  (:documentation "A composite contact that may have virtual children"))
 
 (defmethod realize :before ((contact virtual-composite))
   (with-slots ((composite-event-mask event-mask)) contact
@@ -123,8 +108,8 @@
 	(when (typep child 'virtual)
 	  (setq event-mask (logior event-mask (contact-event-mask child)))))
       ;; Select pointer-motion when enter/leave window is needed
-      (when (plusp (logand event-mask #.(make-event-mask :enter-window :leave-window)))
-	(setq event-mask (logior event-mask #.(make-event-mask :pointer-motion))))
+      (when (plusp (logand event-mask #.(xlib:make-event-mask :enter-window :leave-window)))
+	(setq event-mask (logior event-mask #.(xlib:make-event-mask :pointer-motion))))
       ;; Combine virtual event mask with the composite's
       (setf composite-event-mask (logior event-mask composite-event-mask)))))
 
@@ -149,14 +134,17 @@
 			  (child-event-mask event-mask)) (the virtual child)
 	       (with-slots ((event-x x) (event-y y)
 			    (event-key key)) (the event event)
-		 (when (and child
-			    (plusp
-			      (logand child-event-mask
-				      (case event-key
-					(:key-press #.(make-event-mask :key-press))
-					(:key-release #.(make-event-mask :key-release))
-					(:button-press #.(make-event-mask :button-press))
-					(:button-release #.(make-event-mask :button-release))))))
+		 (when
+		     (and child
+			  (let ((logand-result
+				 (logand child-event-mask
+					 (ecase event-key
+					   (:key-press #.(xlib:make-event-mask :key-press))
+					   (:key-release #.(xlib:make-event-mask :key-release))
+					   (:button-press #.(xlib:make-event-mask :button-press))
+					   (:button-release #.(xlib:make-event-mask :button-release))))))
+			    (and (numberp logand-result)
+				 (plusp logand-result))))
 		   ;; Make event relative to child
 		   (setf event-x (- event-x child-x)
 			 event-y (- event-y child-y))
@@ -177,7 +165,7 @@
 		     (with-slots ((event-x x) (event-y y)
 				  (event-key key)) (the event event)
 		       (when (and mouse-contact (not (eq mouse-contact child))
-				  (plusp (logand #.(make-event-mask :leave-window)
+				  (plusp (logand #.(xlib:make-event-mask :leave-window)
 						 mouse-event-mask)))
 			 ;; Make event relative to child
 			 (setf event-x (- x mouse-x)
@@ -186,16 +174,16 @@
 			 (setq handled-p t))
 		       (setf (mouse-contact contact) child)
 		       (when (and (not (eq mouse-contact child))
-				  (plusp (logand #.(make-event-mask :enter-window)
+				  (plusp (logand #.(xlib:make-event-mask :enter-window)
 						 child-event-mask)))
 			 (setf event-x (- x child-x)
 			       event-y (- y child-y))
 			 (cluei::dispatch-event event :enter-notify t event-sequence child)
 			 (setq handled-p t))
-		       (when (plusp (logand #.(make-event-mask
-						:pointer-motion :pointer-motion-hint
- 						:button-1-motion :button-2-motion :button-3-motion
-						:button-4-motion :button-5-motion :button-motion)
+		       (when (plusp (logand #.(xlib:make-event-mask
+					       :pointer-motion :pointer-motion-hint
+					       :button-1-motion :button-2-motion :button-3-motion
+					       :button-4-motion :button-5-motion :button-motion)
 					    child-event-mask))
 			 (setf event-x (- x child-x)
 			       event-y (- y child-y))
@@ -212,7 +200,7 @@
 	       (with-slots ((event-x x) (event-y y)
 			    (event-key key)) (the event event)
 		 (when (and mouse-contact
-			    (plusp (logand #.(make-event-mask :leave-window)
+			    (plusp (logand #.(xlib:make-event-mask :leave-window)
 					   mouse-event-mask)))
 		   ;; Make event relative to child
 		   (setf event-x (- event-x mouse-x)
@@ -230,12 +218,11 @@
 	       (dolist (child (composite-children contact))
 		 (when (typep child 'virtual)
 		   (with-slots ((child-x x) (child-y y))
-			       (the virtual child)
+		       (the virtual child)
 		     (setf event-x (- x child-x)
 			   event-y (- y child-y)))
 		   (cluei::dispatch-event event :exposure t event-sequence child)))
 	       (setf event-x x
 		     event-y y)))))
 
-	(call-next-method)
-	))))
+	(call-next-method)))))

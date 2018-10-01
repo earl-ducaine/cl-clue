@@ -94,7 +94,7 @@
    ;; STREAM-READ-CHAR, STREAM-CLEAR-OUTPUT and :after REALIZE.
    (more-height
      :initform t
-     :type (or boolean card16)
+     :type (or boolean xlib:card16)
      :accessor stream-more-height)
 
    (rubout-handler-function
@@ -146,9 +146,9 @@
   ;; Ensure the gcontext is initialized
   (with-slots (gcontext font background) self
     (unless gcontext
-      (setf gcontext (create-gcontext :drawable self :font font
-				      :background background
-				      :foreground (logxor background 1)))))
+      (setf gcontext (xlib:create-gcontext :drawable self :font font
+					   :background background
+					   :foreground (logxor background 1)))))
   (reset-more-height self))
 
 (defevent interactive-stream :key-press stream-save-key)
@@ -536,14 +536,14 @@ leaving the character in the buffer.  If no character is available, return NIL."
   ;; Tied closely to DRAW-LOZENGED-STRING calulations : (let (( .. (wid (+ lozenge-height width)) ..)))
   (let ((ch-name (char-name char)))
     (multiple-value-bind (width ascent descent)
-	(text-extents font ch-name)
+	(xlib:text-extents font ch-name)
       (+ ascent descent width))))
 
 ;; may 12/14/89 Fix cosmetics.
 (defun draw-lozenged-string (window gcontext x0 y0 string font)
   "Display string inside a lozenge at X0 Y0."
   (multiple-value-bind (width ascent descent)	;; may 12/14/89
-      (text-extents font string)
+      (xlib:text-extents font string)
     (let* (;; Put some pixels to the top and bottom of the string and still stay inside lineheight.
 	   (lozenge-height (+ ascent descent))	;; may 12/14/89
 	   (wid (+ lozenge-height width))

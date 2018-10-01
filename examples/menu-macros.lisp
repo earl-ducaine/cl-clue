@@ -23,8 +23,8 @@
 (defcontact menu (override-shell)
   ()
   (:resources
-    (font :type font)
-    (foreground :type pixel)
+    (font :type xlib:font)
+    (foreground :type xlib:pixel)
     (title :type string)
     (state :initform :withdrawn))
   (:documentation
@@ -35,13 +35,14 @@
   ((font
      :accessor title-font
      :initarg  :font
+     ;; :initform (xlib::get-default-font)
      :initform "fixed"
-     :type     font)
+     :type     xlib:font)
    (foreground
      :accessor title-foreground
      :initarg  :foreground
      :initform :black
-     :type     pixel)
+     :type     xlib:pixel)
    (text
      :accessor title-text
      :initarg  :text
@@ -52,10 +53,10 @@
      :reader     contact-compress-exposures
      :type       (member :off :on)))
   (:resources
-    font
+    xlib:font
     foreground
     text
-    (event-mask :initform #.(make-event-mask :exposure)))
+    (event-mask :initform #.(xlib:make-event-mask :exposure)))
   (:documentation
     "A composite consisting of a text title and another contact."))
 
@@ -81,13 +82,14 @@
    (font
      :accessor   button-font
      :initarg    :font
+     ;; :initform   (xlib::get-default-font)
      :initform   "fixed"
-     :type       font)
+     :type       xlib:font)
    (foreground
      :accessor   button-foreground
      :initarg    :foreground
      :initform   :black
-     :type       pixel)
+     :type       xlib:pixel)
    (compress-exposures
      :allocation :class
      :initform   :on

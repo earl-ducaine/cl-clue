@@ -20,9 +20,10 @@
   :depends-on (clx closer-mop trivial-gray-streams)
   :components
   ((:file "package")
-   (:file "defcontact" :depends-on("event-parse"))
-   (:file "event-parse" :depends-on("package"))
-   (:file "intrinsics" :depends-on("event-parse" "defcontact"))
+   (:file "clx-compatability")
+   (:file "defcontact" :depends-on(event-parse))
+   (:file "event-parse" :depends-on(package clx-compatability))
+   (:file "intrinsics" :depends-on(event-parse defcontact))
    (:file "intrinsics-methods" :depends-on("intrinsics"))
    (:file "events" :depends-on("intrinsics" "event-parse"))
    (:module resource
@@ -37,9 +38,8 @@
    (:file "stream" :depends-on("intrinsics" "resource" "events"))
    (:file "virtual" :depends-on("intrinsics" "resource" "events"))
    (:file "caches" :depends-on("intrinsics"))
-   (:file "obsolete" :depends-on("package"))
    (:module examples
-	    :depends-on("obsolete" "caches" "root-gmgmt" "virtual")
+	    :depends-on("caches" "root-gmgmt" "virtual")
 	    :components
 	    ((:file "menu-macros")
 	     (:file "menu")))))

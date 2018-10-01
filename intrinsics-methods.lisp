@@ -70,16 +70,16 @@
       ;; Create the contact window
       (apply
        #'xlib:create-window
-       :window           contact
-       :parent           parent
-       :x                x
-       :y                y
-       :width            width
-       :height           height
-       :border-width     border-width
-       :event-mask       event-mask
-       :background       (unless input-only-p background)
-       :depth            depth
+       :window contact
+       :parent parent
+       :x x
+       :y y
+       :width width
+       :height height
+       :border-width border-width
+       :event-mask event-mask
+       :background (unless input-only-p background)
+       :depth depth
        :allow-other-keys t
        initialization)
       ;; Record depth, if inherited from parent
@@ -166,7 +166,7 @@
     (setf (contact-state contact) :withdrawn)
     (when (realized-p contact)
       ;; Select for :structure-notify to receive :destroy-notify events
-      (setf (window-event-mask contact) #.(make-event-mask :structure-notify))
+      (setf (window-event-mask contact) #.(xlib:make-event-mask :structure-notify))
       ;; Destroy the contact's window subtree
       (xlib:destroy-window contact))
     ;; Destroy other server resources and intrinsics hooks associated with contact
@@ -177,20 +177,20 @@
 (defmethod initialize-instance :after ((self root) &rest options)
   (declare (ignore options))
   (with-slots
-	(display screen (id xlib::id) x y width height border-width depth initialization)
+	(xlib:display screen (id xlib::id) x y width height border-width depth initialization)
       self
     ;; A root contact represents a root window
     (setf
-     id             (window-id (screen-root screen))
+     id (xlib:window-id (xlib:screen-root screen))
      initialization nil			;; Root window is already realized
-     x              0
-     y              0
-     width          (screen-width screen)
-     height         (screen-height screen)
-     border-width   0
-     depth          (screen-root-depth screen))
+     x 0
+     y 0
+     width (xlib:screen-width screen)
+     height (xlib:screen-height screen)
+     border-width 0
+     depth (xlib:screen-root-depth screen))
     ;; Update CLX resource id lookup to associate root id with root contact
-    (xlib::save-id display id self)))
+    (xlib::save-id xlib:display id self)))
 
 (defmethod contact-root ((contact contact))
   ;; Return the root contact associated with CONTACT
@@ -199,8 +199,8 @@
        ((null parent) root)))
 
 (defmethod manage-geometry ((parent composite) (contact contact) x y width height border-width &key)
-  (declare (type (or null int16) x y)
-	   (type (or null card16) width height border-width))
+  (declare (type (or null xlib:int16) x y)
+	   (type (or null xlib:card16) width height border-width))
   (with-slots ((contact-x x)
 	       (contact-y y)
 	       (contact-width width)
@@ -228,8 +228,8 @@
 (defmethod manage-geometry :around ((parent composite) (contact basic-contact)
 				    x y width height border-width &key)
   (declare (type contact          contact)
-	   (type (or null int16)  x y)
-	   (type (or null card16) width height border-width))
+	   (type (or null xlib:int16)  x y)
+	   (type (or null xlib:card16) width height border-width))
   ;; Approve immediately?
   (if (and (realized-p parent) (realized-p contact) (managed-p contact))
       ;; No, do full policy check.
@@ -293,20 +293,16 @@
   "Returns non-nil when CONTACT is willing to become the keyboard input focus"
   (and (viewable-p contact)
        (plusp (logand (contact-event-mask contact)
-		      #.(make-event-mask :key-press :key-release)))
+		      #.(xlib:make-event-mask :key-press :key-release)))
        (sensitive-p contact)))
 
 (defmethod move-focus ((composite composite) &optional (direction :next) &key start revert-to)
-  "Move the input focus to the :next :previous or :set contact from START.
- START defaults to the current focus if there is one, or the first child.
- Returns the new focus contact or NIL if no contacts will accept the
- focus (see accept-focus-p)."
-  (declare (type (member :next :previous :set) direction)
-	   (type (or null contact) start))
-
+  "Move the input focus to the :next :previous or :set contact from
+   START. start defaults to the current focus if there is one, or the
+   first child.  Returns the new focus contact or NIL if no contacts
+   will accept the focus (see accept-focus-p)."
   (let* ((start (or start (composite-focus composite)))
 	 (focus (or start (first (composite-children composite)))))
-
     (when focus ;; focus nil when composite has no children
       (assert (member focus (composite-children composite) :test #'eq) ()
 	      "~s isn't a child of ~s" focus composite)
@@ -315,18 +311,15 @@
 		(if (eq :set direction)
 		    ;; Ensure requested focus is ready to accept
 		    (when (accept-focus-p focus) focus)
-
 		    ;; Else look for next focus ready to accept
 		    (do* ((get-sibling (ecase direction (:next 'next-sibling) (:previous 'previous-sibling)))
 			  (focus       (funcall get-sibling focus) (funcall get-sibling focus)))
 			 ((or (not focus) (eq focus start)))
 		      (when (accept-focus-p focus) (return focus)))))
-
 	;; Tell server to change input focus
 	(set-input-focus (contact-display focus) focus (or revert-to :parent)))
-
       ;; Record focus child found
-      (setf (slot-value (the composite composite) 'focus) focus))))
+      (setf (slot-value composite 'focus) focus))))
 
 (defmethod preferred-size ((contact contact) &key width height border-width)
   "Return preferred size, based on given changes to current values."
