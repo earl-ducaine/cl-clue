@@ -6,6 +6,7 @@
   (:use cl xlib)
   (:nicknames cluei)
   (:export *contact*
+	   *database*
 	   *default-display*
 	   *default-host*
 	   *default-multipress-delay-limit*
@@ -13,6 +14,29 @@
 	   *parent*
 	   *remap-events*
 	   *restrict-events*
+	   0%gray
+	   100%gray
+	   12%gray
+	   12%grayr
+	   25%gray
+	   25%grayr
+	   33%gray
+	   37%gray
+	   37%grayr
+	   50%gray
+	   50%grayr
+	   6%gray
+	   6%grayr
+	   62%gray
+	   62%grayr
+	   66%gray
+	   75%gray
+	   75%grayh
+	   75%grayr
+	   88%gray
+	   88%grayr
+	   93%gray
+	   93%grayr
 	   above-sibling
 	   accept-focus-p
 	   add-before-action
@@ -26,13 +50,24 @@
 	   apply-action
 	   apply-callback
 	   apply-callback-else
+	   arrow-cursor
 	   atom
 	   background
+	   based-arrow-down-cursor
+	   based-arrow-up-cursor
 	   basic-contact
+	   boat-cursor
+	   bogosity-cursor
 	   border-width
+	   bottom-left-corner-cursor
+	   bottom-right-corner-cursor
+	   bottom-side-cursor
+	   bottom-tee-cursor
+	   box-spiral-cursor
 	   call-action
 	   callback-p
 	   callbacks
+	   center-ptr-cursor
 	   change-geometry
 	   change-layout
 	   change-priority
@@ -40,11 +75,15 @@
 	   check-function
 	   child
 	   children
+	   circle-cursor
 	   class-constraints
+	   clear
 	   clear-characters
 	   clear-eol
 	   clear-line
+	   clock-cursor
 	   code
+	   coffee-mug-cursor
 	   colormap
 	   complete-class
 	   complete-name
@@ -79,6 +118,7 @@
 	   contact-parent
 	   contact-pixmap
 	   contact-root
+	   contact-root-shell
 	   contact-screen
 	   contact-sensitive
 	   contact-state
@@ -88,11 +128,18 @@
 	   contact-width
 	   contact-x
 	   contact-y
+	   convert
 	   count
+	   cross-cursor
+	   cross-reverse-cursor
+	   crosshair-cursor
+	   crosshair-cursor
 	   data
 	   defaction
 	   defcontact
 	   defevent
+	   defimage
+	   define-resources
 	   delete-before-action
 	   delete-callback
 	   delete-child
@@ -104,6 +151,7 @@
 	   describe-event-translations
 	   destroy
 	   destroyed-p
+	   diamond-cross-cursor
 	   dismiss
 	   display
 	   display-class
@@ -115,6 +163,12 @@
 	   display-pixmap
 	   display-root
 	   display-root-list
+	   dot-cursor
+	   dotbox-cursor
+	   double-arrow-cursor
+	   draft-large-cursor
+	   draft-small-cursor
+	   draped-box-cursor
 	   draw-lozenged-string
 	   drawable
 	   eval-action
@@ -122,35 +176,55 @@
 	   event-mask
 	   event-translations
 	   event-window
+	   exchange-cursor
+	   fleur-cursor
 	   focus
 	   focus-p
 	   force-input
 	   format
 	   get-rubout-handler-buffer
+	   glyphs
+	   gobbler-cursor
+	   gumby-cursor
+	   hand1-cursor
+	   hand2-cursor
 	   handle-event
+	   heart-cursor
 	   height
 	   hint-p
+	   i-bar-cursor
+	   icon-cursor
 	   id
 	   ignore-action
 	   initialize-geometry
 	   inside-contact-p
 	   installed-p
 	   interactive-stream
+	   iron-cross-cursor
 	   key
 	   keymap
 	   keysym
 	   kind
+	   left-ptr-cursor
+	   left-side-cursor
+	   left-tee-cursor
+	   leftbutton-cursor
 	   listen-character
+	   ll-angle-cursor
+	   lr-angle-cursor
 	   major
 	   make-contact
 	   make-interactive-stream
+	   man-cursor
 	   manage-geometry
 	   manage-priority
 	   managed-p
 	   mapped-p
+	   middlebutton-cursor
 	   minor
 	   mode
 	   mode-type
+	   mouse-cursor
 	   move
 	   move-focus
 	   name
@@ -158,11 +232,16 @@
 	   next-sibling
 	   open-contact-display
 	   override-redirect-p
+	   override-shell
 	   owns-focus-p
 	   parent
+	   pencil-cursor
 	   perform-callback
+	   pirate-cursor
+	   pixel
 	   place
 	   plist
+	   plus-cursor
 	   preferred-size
 	   present
 	   previous-sibling
@@ -170,27 +249,52 @@
 	   process-next-event
 	   processing-event-p
 	   property
+	   question-arrow-cursor
 	   read-character
 	   realize
 	   realized-p
+	   rectangle
 	   refresh
 	   requestor
 	   resize
 	   resource
+	   right-ptr-cursor
+	   right-side-cursor
+	   right-tee-cursor
+	   rightbutton-cursor
 	   root
 	   root-x
 	   root-y
+	   rtl-logo-cursor
 	   rubout-handler
+	   sailboat-cursor
 	   same-screen-p
+	   sb-down-arrow-cursor
+	   sb-h-double-arrow-cursor
+	   sb-left-arrow-cursor
+	   sb-right-arrow-cursor
+	   sb-up-arrow-cursor
+	   sb-v-double-arrow-cursor
 	   selection
 	   send-event-p
 	   sensitive
 	   sensitive-p
 	   set-cursorpos
 	   shadow-width
+	   shell
+	   shell-mapped
+	   shell-owner
+	   shell-unmapped
 	   shells
+	   shuttle-cursor
 	   simple-rubout-handler
+	   sizing-cursor
+	   sm-client-host
+	   sm-command
+	   spider-cursor
+	   spraycan-cursor
 	   spring-loaded
+	   star-cursor
 	   state
 	   stream-clear-input
 	   stream-clear-output
@@ -204,17 +308,36 @@
 	   stream-write-char
 	   stream-write-string
 	   target
+	   target-cursor
+	   tcross-cursor
 	   text-within-width
 	   throw-action
 	   time
+	   top-left-arrow-cursor
+	   top-left-arrow-cursor
+	   top-left-corner-cursor
 	   top-level-p
+	   top-level-session
+	   top-level-shell
+	   top-right-corner-cursor
+	   top-side-cursor
+	   top-tee-cursor
 	   trace-action
+	   transient-shell
 	   translate-event
+	   trek-cursor
 	   type
+	   ul-angle-cursor
+	   umbrella-cursor
 	   undefevent
+	   undefine-resources
 	   unread-character
 	   update-state
+	   ur-angle-cursor
 	   using-gcontext
+	   virtual
+	   virtual-composite
+	   watch-cursor
 	   while-changing-layout
 	   width
 	   window
@@ -222,11 +345,415 @@
 	   with-event-mode
 	   with-input-editing
 	   with-mode
+	   with-wm-properties
+	   with-wm-properties
+	   wm-base-height
+	   wm-base-width
+	   wm-colormap-owners
+	   wm-delta-height
+	   wm-delta-width
+	   wm-gravity
+	   wm-group
+	   wm-icon
+	   wm-icon-mask
+	   wm-icon-title
+	   wm-icon-x
+	   wm-icon-y
+	   wm-initial-state
+	   wm-keyboard-input
+	   wm-max-aspect
+	   wm-max-height
+	   wm-max-width
+	   wm-message
+	   wm-message-protocol
+	   wm-message-timestamp
+	   wm-min-aspect
+	   wm-min-height
+	   wm-min-width
+	   wm-protocols-used
+	   wm-shell
+	   wm-title
+	   wm-user-specified-position-p
+	   wm-user-specified-size-p
 	   x
+	   x-cursor
 	   y))
 
 (defpackage :clue
-  (:use common-lisp xlib cluei))
+  (:use common-lisp xlib cluei)
+  (:export *contact*
+	   *database*
+	   *default-display*
+	   *default-host*
+	   *default-multipress-delay-limit*
+	   *default-multipress-verify-p*
+	   *parent*
+	   *remap-events*
+	   *restrict-events*
+	   0%gray
+	   100%gray
+	   12%gray
+	   12%grayr
+	   25%gray
+	   25%grayr
+	   33%gray
+	   37%gray
+	   37%grayr
+	   50%gray
+	   50%grayr
+	   6%gray
+	   6%grayr
+	   62%gray
+	   62%grayr
+	   66%gray
+	   75%gray
+	   75%grayh
+	   75%grayr
+	   88%gray
+	   88%grayr
+	   93%gray
+	   93%grayr
+	   above-sibling
+	   accept-focus-p
+	   add-before-action
+	   add-callback
+	   add-child
+	   add-event
+	   add-mode
+	   add-timer
+	   ancestor-p
+	   append-characters
+	   apply-action
+	   apply-callback
+	   apply-callback-else
+	   arrow-cursor
+	   atom
+	   background
+	   based-arrow-down-cursor
+	   based-arrow-up-cursor
+	   basic-contact
+	   boat-cursor
+	   bogosity-cursor
+	   border-width
+	   bottom-left-corner-cursor
+	   bottom-right-corner-cursor
+	   bottom-side-cursor
+	   bottom-tee-cursor
+	   box-spiral-cursor
+	   call-action
+	   callback-p
+	   callbacks
+	   center-ptr-cursor
+	   change-geometry
+	   change-layout
+	   change-priority
+	   character
+	   check-function
+	   child
+	   children
+	   circle-cursor
+	   class-constraints
+	   clear
+	   clear-characters
+	   clear-eol
+	   clear-line
+	   clock-cursor
+	   code
+	   coffee-mug-cursor
+	   colormap
+	   complete-class
+	   complete-name
+	   composite
+	   composite-children
+	   composite-focus
+	   composite-shells
+	   compress-exposures
+	   compress-motion
+	   configure-p
+	   contact
+	   contact-background
+	   contact-border-width
+	   contact-callbacks
+	   contact-complete-class
+	   contact-complete-name
+	   contact-compress-exposures
+	   contact-compress-motion
+	   contact-constraint
+	   contact-constraints
+	   contact-depth
+	   contact-display
+	   contact-event-mask
+	   contact-glyph-cursor
+	   contact-height
+	   contact-image-cursor
+	   contact-image-mask
+	   contact-image-pixmap
+	   contact-mask
+	   contact-mode
+	   contact-name
+	   contact-parent
+	   contact-pixmap
+	   contact-root
+	   contact-root-shell
+	   contact-screen
+	   contact-sensitive
+	   contact-state
+	   contact-super-mode
+	   contact-top-level
+	   contact-translate
+	   contact-width
+	   contact-x
+	   contact-y
+	   convert
+	   count
+	   cross-cursor
+	   cross-reverse-cursor
+	   crosshair-cursor
+	   crosshair-cursor
+	   data
+	   defaction
+	   defcontact
+	   defevent
+	   defimage
+	   define-resources
+	   delete-before-action
+	   delete-callback
+	   delete-child
+	   delete-event
+	   delete-mode
+	   delete-timer
+	   depth
+	   describe-action
+	   describe-event-translations
+	   destroy
+	   destroyed-p
+	   diamond-cross-cursor
+	   dismiss
+	   display
+	   display-class
+	   display-cursor
+	   display-mask
+	   display-multipress-delay-limit
+	   display-multipress-verify-p
+	   display-name
+	   display-pixmap
+	   display-root
+	   display-root-list
+	   dot-cursor
+	   dotbox-cursor
+	   double-arrow-cursor
+	   draft-large-cursor
+	   draft-small-cursor
+	   draped-box-cursor
+	   draw-lozenged-string
+	   drawable
+	   eval-action
+	   event-actions
+	   event-mask
+	   event-translations
+	   event-window
+	   exchange-cursor
+	   fleur-cursor
+	   focus
+	   focus-p
+	   force-input
+	   format
+	   get-rubout-handler-buffer
+	   glyphs
+	   gobbler-cursor
+	   gumby-cursor
+	   hand1-cursor
+	   hand2-cursor
+	   handle-event
+	   heart-cursor
+	   height
+	   hint-p
+	   i-bar-cursor
+	   icon-cursor
+	   id
+	   ignore-action
+	   initialize-geometry
+	   inside-contact-p
+	   installed-p
+	   interactive-stream
+	   iron-cross-cursor
+	   key
+	   keymap
+	   keysym
+	   kind
+	   left-ptr-cursor
+	   left-side-cursor
+	   left-tee-cursor
+	   leftbutton-cursor
+	   listen-character
+	   ll-angle-cursor
+	   lr-angle-cursor
+	   major
+	   make-contact
+	   make-interactive-stream
+	   man-cursor
+	   manage-geometry
+	   manage-priority
+	   managed-p
+	   mapped-p
+	   middlebutton-cursor
+	   minor
+	   mode
+	   mode-type
+	   mouse-cursor
+	   move
+	   move-focus
+	   name
+	   new-p
+	   next-sibling
+	   open-contact-display
+	   override-redirect-p
+	   override-shell
+	   owns-focus-p
+	   parent
+	   pencil-cursor
+	   perform-callback
+	   pirate-cursor
+	   pixel
+	   place
+	   plist
+	   plus-cursor
+	   preferred-size
+	   present
+	   previous-sibling
+	   process-all-events
+	   process-next-event
+	   processing-event-p
+	   property
+	   question-arrow-cursor
+	   read-character
+	   realize
+	   realized-p
+	   rectangle
+	   refresh
+	   requestor
+	   resize
+	   resource
+	   right-ptr-cursor
+	   right-side-cursor
+	   right-tee-cursor
+	   rightbutton-cursor
+	   root
+	   root-x
+	   root-y
+	   rtl-logo-cursor
+	   rubout-handler
+	   sailboat-cursor
+	   same-screen-p
+	   sb-down-arrow-cursor
+	   sb-h-double-arrow-cursor
+	   sb-left-arrow-cursor
+	   sb-right-arrow-cursor
+	   sb-up-arrow-cursor
+	   sb-v-double-arrow-cursor
+	   selection
+	   send-event-p
+	   sensitive
+	   sensitive-p
+	   set-cursorpos
+	   shadow-width
+	   shell
+	   shell-mapped
+	   shell-owner
+	   shell-unmapped
+	   shells
+	   shuttle-cursor
+	   simple-rubout-handler
+	   sizing-cursor
+	   sm-client-host
+	   sm-command
+	   spider-cursor
+	   spraycan-cursor
+	   spring-loaded
+	   star-cursor
+	   state
+	   stream-clear-input
+	   stream-clear-output
+	   stream-fresh-line
+	   stream-listen
+	   stream-move-cursor
+	   stream-peek-char
+	   stream-read-char
+	   stream-read-line
+	   stream-unread-char
+	   stream-write-char
+	   stream-write-string
+	   target
+	   target-cursor
+	   tcross-cursor
+	   text-within-width
+	   throw-action
+	   time
+	   top-left-arrow-cursor
+	   top-left-arrow-cursor
+	   top-left-corner-cursor
+	   top-level-p
+	   top-level-session
+	   top-level-shell
+	   top-right-corner-cursor
+	   top-side-cursor
+	   top-tee-cursor
+	   trace-action
+	   transient-shell
+	   translate-event
+	   trek-cursor
+	   type
+	   ul-angle-cursor
+	   umbrella-cursor
+	   undefevent
+	   undefine-resources
+	   unread-character
+	   update-state
+	   ur-angle-cursor
+	   using-gcontext
+	   virtual
+	   virtual-composite
+	   watch-cursor
+	   while-changing-layout
+	   width
+	   window
+	   with-event
+	   with-event-mode
+	   with-input-editing
+	   with-mode
+	   with-wm-properties
+	   with-wm-properties
+	   wm-base-height
+	   wm-base-width
+	   wm-colormap-owners
+	   wm-delta-height
+	   wm-delta-width
+	   wm-gravity
+	   wm-group
+	   wm-icon
+	   wm-icon-mask
+	   wm-icon-title
+	   wm-icon-x
+	   wm-icon-y
+	   wm-initial-state
+	   wm-keyboard-input
+	   wm-max-aspect
+	   wm-max-height
+	   wm-max-width
+	   wm-message
+	   wm-message-protocol
+	   wm-message-timestamp
+	   wm-min-aspect
+	   wm-min-height
+	   wm-min-width
+	   wm-protocols-used
+	   wm-shell
+	   wm-title
+	   wm-user-specified-position-p
+	   wm-user-specified-size-p
+	   x
+	   x-cursor
+	   y))
 
 (defpackage :clue-example
-  (:use common-lisp xlib cluei))
+  (:use common-lisp xlib clue))

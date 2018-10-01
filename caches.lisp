@@ -134,7 +134,7 @@
 	      ,lookup)
 	   `,lookup)))))
 
-(defconstant +gcontext-test-sequence+
+(defparameter *gcontext-test-sequence*
   (let ((state-indexes (append xlib::+gcontext-components+ '(:clip :dash))))
     (mapcar
      (lambda (key) (position key state-indexes))
@@ -187,7 +187,7 @@
 	     ;; Next gcontext matches?...
 	     (let ((test-state (xlib::gcontext-local-state gcontext)))
 	       (declare (type xlib::gcontext-state test-state))
-	       (dolist (i +gcontext-test-sequence+ t)
+	       (dolist (i *gcontext-test-sequence* t)
 		 (unless (equalp  (svref test-state i) (svref desired i))
 		   (return nil))))
 	     ;; ...and matching gcontext is at head of cache?

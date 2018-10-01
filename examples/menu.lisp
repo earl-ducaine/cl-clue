@@ -608,26 +608,26 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
 (defun resource-menu (host menu-name item-defaults &rest buttons)
   (let*
-    ((display (open-contact-display 'resource-menu :host host))
-     (menu    (make-contact 'menu :parent display :name menu-name)))
+      ((display (open-contact-display 'resource-menu :host host))
+       (menu    (make-contact 'menu :parent display :name menu-name)))
     (unwind-protect
-	(progn
-	  ;; Create menu items
-	  (dolist (label buttons)
-	    (make-contact 'button
-			  :parent   (menu-manager menu)
-			  :name     (intern (string label))
-			  :label    (format nil "~:(~a~)" label)
-			  :defaults item-defaults))
-	  ;; Set menu callback to return chosen item label
-	  (add-callback menu :select 'throw-menu-selection menu)
-	  ;; Display the menu so that first item is at x,y
-	  (initialize-geometry menu)
-	  (multiple-value-bind (x y) (query-pointer (contact-parent menu))
-	    (menu-present menu x y))
-	  ;; Event processing loop --- return selected string.
-	  (catch :menu-selection
-	    (loop (process-next-event display))))
+	 (progn
+	   ;; Create menu items
+	   (dolist (label buttons)
+	     (make-contact 'button
+			   :parent   (menu-manager menu)
+			   :name     (intern (string label))
+			   :label    (format nil "~:(~a~)" label)
+			   :defaults item-defaults))
+	   ;; Set menu callback to return chosen item label
+	   (add-callback menu :select 'throw-menu-selection menu)
+	   ;; Display the menu so that first item is at x,y
+	   (initialize-geometry menu)
+	   (multiple-value-bind (x y) (query-pointer (contact-parent menu))
+	     (menu-present menu x y))
+	   ;; Event processing loop --- return selected string.
+	   (catch :menu-selection
+	     (loop (process-next-event display))))
       (close-display display))))
 
 
@@ -673,12 +673,12 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
     (format t "~%Use large Courier font everywhere ...")
 
-    (define-resources (resource-menu * font) "*courier-bold-r-normal--24*")
+    (define-resources (* resource-menu font) "*courier-bold-r-normal--24*")
 
     (format t " Choice is ~a"
             (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
 
-    (undefine-resources (resource-menu * font) "*courier-bold-r-normal--24*")
+    (undefine-resources (* resource-menu font) "*courier-bold-r-normal--24*")
     (unless (y-or-n-p "~%Continue?") (return))
 
 

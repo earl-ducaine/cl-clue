@@ -23,11 +23,7 @@
 ;;; Grays with an "R" on the end have regular patterns (grid-like)
 ;;; Other grays (without the "R") have pixels offset to avoid the grid look.
 
-(in-package "CLUEI")
-
-(export '(defimage 0%gray 6%grayr 6%gray 12%grayr 12%gray 25%grayr 25%gray 37%grayr 37%gray
-	  33%gray 50%grayr 50%gray 66%gray 62%grayr 62%gray 75%grayr 75%grayh 75%gray
-	  88%grayr 88%gray 93%grayr 93%gray 100%gray))
+(in-package :cluei)
 
 (defvar *bitmap-images* nil "List of defined bitmap images")
 
@@ -166,4 +162,3 @@
 
 (defimage 0%gray
   '#*0)
-

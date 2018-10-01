@@ -16,87 +16,30 @@
 ;;; express or implied warranty.
 ;;;
 
-(in-package "CLUEI")
-
-(export
-  '(
-    contact-root-shell
-    override-shell
-    shell
-    shell-mapped
-    shell-owner
-    shell-unmapped
-    sm-client-host
-    sm-command
-    top-level-session
-    top-level-shell
-    transient-shell
-    with-wm-properties
-    with-wm-properties
-    wm-base-height
-    wm-base-width
-    wm-colormap-owners
-    wm-delta-height
-    wm-delta-width
-    wm-gravity
-    wm-group
-    wm-icon
-    wm-icon-mask
-    wm-icon-title
-    wm-icon-x
-    wm-icon-y
-    wm-initial-state
-    wm-keyboard-input
-    wm-max-aspect
-    wm-max-height
-    wm-max-width
-    wm-message
-    wm-message-protocol
-    wm-message-timestamp
-    wm-min-aspect
-    wm-min-height
-    wm-min-width
-    wm-protocols-used
-    wm-shell
-    wm-title
-    wm-user-specified-position-p
-    wm-user-specified-size-p
-    )
-  'cluei)
+(in-package :cluei)
 
 
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;; 				      Shell                                    |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
+;;; Shell
 
 (defcontact shell (composite)
   ((state        :type     (member :withdrawn :iconic :mapped)
 		 :reader   contact-state)	; setf defined below
-
    (owner        :type     composite
 		 :reader   shell-owner))
   (:resources
     (state       :type     (member :withdrawn :iconic :mapped)
 		 :initform (shell-default-state)))
-
   (:documentation
     "Base class for all shell contacts."))
 
 
-
 (defmethod initialize-instance :around ((shell shell) &rest initargs)
-  (declare (ignore initargs))
   ;; Must bind new shell in order to evaluate initform for state slot.
   (let ((*new-shell* shell))
     (declare (special *new-shell*))
     (call-next-method)))
 
 (defmethod initialize-instance :after ((shell shell) &rest initargs)
-  (declare (ignore initargs))
   (with-slots (background owner) shell
     ;; Use initial background, if not :parent-relative.
     ;; Else look for background inherited from owner.
@@ -112,11 +55,7 @@
 	     bg)))))
 
 
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;; 				 Override Shell                                |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
+;;; Override Shell
 
 (defcontact override-shell (shell)
   ()
@@ -132,12 +71,7 @@
     shell))
 
 
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;		    Batching window manager property changes                   |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
+;;; Batching window manager property changes
 
 (defmacro wm-properties-changed (shell &optional default)
   "Return list of changed window manager properties for the SHELL."
@@ -173,7 +107,6 @@ after the BODY."
 		   '(
 		     ;; class, transient-for properties not included because
 		     ;; they should only be changed during initialization
-
 		     client-machine
 		     colormap-windows
 		     command
@@ -193,39 +126,29 @@ after the BODY."
 (define-wm-batch-change-properties)
 
 
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
 ;;;			      Window Manager Shell                             |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
 
 (defcontact wm-shell (shell)
   ((hints                :type     (or null wm-hints)
 			 :initform nil
 			 :initarg  :wm-hints
 			 :accessor shell-hints)
-
    (normal-hints         :type     (or null wm-size-hints)
 			 :initform nil
 			 :initarg  :wm-normal-hints
 			 :accessor shell-normal-hints)
-
    (protocols-used       :type     (or null list)
 			 :initform nil
 			 :initarg  :wm-protocols-used
 			 :accessor wm-protocols-used)
-
    (title                :type     (or null string)
 			 :initform nil
 			 :initarg  :wm-title
 			 :accessor wm-title)
-
    (reparented-p         :type     boolean
 			 :initform nil))
-
   (:resources
     (event-mask       :initform #.(make-event-mask :structure-notify))
-
     (wm-base-height   :type (or null card16))
     (wm-base-width    :type (or null card16))
     (wm-delta-height  :type (or null card16))
@@ -243,19 +166,11 @@ after the BODY."
      wm-title
     (wm-user-specified-position-p :type boolean)
     (wm-user-specified-size-p     :type boolean))
-
   (:documentation
     "Base class for shells which interact with the window manager."))
 
 
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;; 			     WM_PROTOCOLS accessors                            |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
+;;; WM_PROTOCOLS accessors
 
 (defmethod wm-change-protocols ((shell wm-shell))
   "Send a request to change the WM_PROTOCOLS property for the SHELL."
@@ -729,7 +644,6 @@ after the BODY."
   timestamp)
 
 (defun wm-message-protocol-atom (wm-message)
-  (declare (special *event-display*))
   (atom-name *event-display* (wm-message-protocol wm-message)))
 
 (defevent wm-shell (:wm_take_focus) wm-take-focus)

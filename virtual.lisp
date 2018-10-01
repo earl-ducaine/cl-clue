@@ -25,13 +25,11 @@
 
 (in-package "CLUEI")
 
-(export '( virtual
-	  virtual-composite
-	  ))
 
-;; These are methods that duplicate the xlib draw-rectangle, draw-rectangle and clear-area
-;; functions.  I'm not happy with the names, please mail suggestions to clue-review@dsg.csc.ti.com
-(export '(rectangle glyphs clear))
+;; These are methods that duplicate the xlib draw-rectangle,
+;; draw-rectangle and clear-area functions. I'm not happy with the
+;; names, please mail suggestions to clue-review@dsg.csc.ti.com
+
 
 (defcontact virtual (basic-contact)
   ()
@@ -150,13 +148,14 @@
 	       (with-slots ((event-x x) (event-y y)
 			    (event-key key)) (the event event)
 		 (when (and child
-			    (plusp
-			      (logand child-event-mask
+			      (let ((logand-result (logand child-event-mask
 				      (case event-key
 					(:key-press #.(make-event-mask :key-press))
 					(:key-release #.(make-event-mask :key-release))
 					(:button-press #.(make-event-mask :button-press))
 					(:button-release #.(make-event-mask :button-release))))))
+				(and (numberp logand-result)
+				     (plusp logand-result))))
 		   ;; Make event relative to child
 		   (setf event-x (- event-x child-x)
 			 event-y (- event-y child-y))

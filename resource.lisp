@@ -16,17 +16,8 @@
 ;;; express or implied warranty.
 ;;;
 
-(in-package "CLUEI")
+(in-package :CLUEI)
 
-(export '(*database*
-	   convert
-	   define-resources
-	   undefine-resources
-	   ))
-
-(export '(default-resources ;; Debug aids
-	   class-resources
-	   describe-resource))
 
 (defvar *database* (make-resource-database))
 
@@ -285,7 +276,6 @@
     (otherwise  nil)))
 
 (defun stringable-value (stringable type)
-  (declare (values value symbol))
   (let ((symbol (if (symbolp stringable)
 		    stringable
 		    (let ((*package* (find-package "CLUE")))
