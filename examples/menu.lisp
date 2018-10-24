@@ -1,35 +1,34 @@
 ;;; -*- Mode:Lisp; Package:USER; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 
-;;;                          TEXAS INSTRUMENTS INCORPORATED
-;;;                                   P.O. BOX 149149
-;;;                                AUSTIN, TEXAS 78714-9149
+;;; Texas Iinstruments Incorporated
+;;; P.O. BOX 149149
+;;; Austin, Texas 78714-9149
 ;;;
-;;;                Copyright (C) 1989,1990 Texas Instruments Incorporated
+;;; Copyright (C) 1989,1990 Texas Instruments Incorporated
 ;;;
-;;; Permission is granted to any individual or institution to use, copy, modify, and
-;;; distribute this software, provided that  this complete copyright and  permission
-;;; notice is maintained, intact, in all copies and supporting documentation.
+;;; Permission is granted to any individual or institution to use,
+;;; copy, modify, and distribute this software, provided that this
+;;; complete copyright and permission notice is maintained, intact, in
+;;; all copies and supporting documentation.
 ;;;
-;;; Texas Instruments Incorporated provides this software "as is" without express or
-;;; implied warranty.
+;;; Texas Instruments Incorporated provides this software "as is"
+;;; without express or implied warranty.
 ;;;
 ;;; Source code for clue examples described in Explorer X Window
 ;;; System Programmer's Reference Manual.
 
-
 (in-package :clue-example)
 
-
-(defmethod initialize-instance :after ((menu menu) &key title font foreground background &allow-other-keys)
+(defmethod initialize-instance :after
+    ((menu menu) &key title menu-font foreground background &allow-other-keys)
   ;; Create title-frame containing choices child to manage menu items
-  (let* ((title   (make-contact
-		   'title-frame
-		   :parent     menu
-		   :name :title
-		   :text title
-		   :font font
-		   :foreground foreground
-		   :background (or background :white)))
+  (let* ((title (make-contact 'title-frame
+			      :parent menu
+			      :name :title
+			      :text title
+			      :font menu-font
+			      :foreground foreground
+			      :background (or background :white)))
          (manager (make-contact
 		   'choices
 		   :parent title
@@ -93,7 +92,6 @@
        :y (max 0 (min (- (contact-height parent) (contact-height menu))
 		      (- y item-y)))
        :accept-p t)))
-
   ;; Make menu visible
   (setf (contact-state menu) :mapped))
 
@@ -118,11 +116,11 @@
 
 ;; Accessors
 
-(defmethod (setf title-font) (new-value (title-frame title-frame))
-  (title-update title-frame :font (convert title-frame new-value 'font)))
+;; (defmethod (setf title-font) (new-value (title-frame title-frame))
+;;   (title-update title-frame :font (convert title-frame new-value 'font)))
 
-(defmethod (setf title-text) (new-value (title-frame title-frame))
-  (title-update title-frame :text new-value))
+;; (defmethod (setf title-text) (new-value (title-frame title-frame))
+;;   (title-update title-frame :text new-value))
 
 (defmethod title-update ((title-frame title-frame) &key text font)
   (with-slots ((current-text text) (current-font font)) title-frame
@@ -146,10 +144,8 @@
   (assert (not (title-content title-frame))
           nil "~s already has a content." title-frame))
 
-
 (defmethod manage-geometry ((title-frame title-frame) child x y width height border-width &key)
   (with-slots ((frame-width width) (frame-height height)) title-frame
-
     (let* ((x            (or x            (contact-x child)))
            (y            (or y            (contact-y child)))
            (width        (or width        (contact-width child)))
@@ -157,12 +153,10 @@
            (border-width (or border-width (contact-border-width child)))
            (total-width  (+ width border-width border-width))
            (total-height (+ height border-width border-width)))
-
       ;; Get preferred frame size for requested content geometry
       (multiple-value-bind (min-width min-height)
           (title-preferred-size-if
             title-frame total-width total-height frame-width frame-height)
-
         ;; Try to ensure at least preferred frame size
         (when
           (or (setf min-width  (when (< frame-width min-width)   min-width))
@@ -171,16 +165,13 @@
                            :width min-width
                            :height min-height
                            :accept-p t)))
-
       ;; Approve request based on current frame size and title size
       (multiple-value-bind (title-width title-height) (title-size title-frame)
         (declare (ignore title-width))
-
         (let ((approved-x      0)
               (approved-y      title-height)
               (approved-width  (- frame-width border-width border-width))
               (approved-height (- frame-height title-height border-width border-width)))
-
           (values
             (and (= x approved-x) (= y approved-y)
                  (= width approved-width) (= height approved-height))
@@ -193,7 +184,6 @@
 (defmethod change-layout ((title-frame title-frame) &optional newly-managed)
   (declare (ignore  newly-managed))
   (with-slots (width height) title-frame
-
     ;; Try to ensure at least preferred size
     (multiple-value-bind (min-width min-height) (preferred-size title-frame)
       (when
@@ -203,83 +193,65 @@
                          :width min-width
                          :height min-height
                          :accept-p t)))
-
     ;; Adjust title, content geometry to current size
     (title-adjust title-frame)))
-
 
 (defmethod preferred-size ((title-frame title-frame) &key width height border-width)
   (let ((content (title-content title-frame))
         (width   (or width (contact-width title-frame)))
         (height  (or height (contact-height title-frame))))
-
     ;; Determine total size of content, including border width
     (multiple-value-bind (current-content-width current-content-height)
         (if content
-
             (with-slots ((content-width width)
                          (content-height height)
                          (content-border-width border-width)) content
               (values (+ content-width content-border-width content-border-width)
                       (+ content-height content-border-width content-border-width)))
-
             (values 0 0))
-
       ;; Determine preferred frame size for this content
       (multiple-value-bind (preferred-width preferred-height)
           (title-preferred-size-if
             title-frame current-content-width current-content-height width height)
-
         (values
           preferred-width
           preferred-height
           (or border-width (contact-border-width title-frame)))))))
 
-
 (defun title-preferred-size-if (title-frame content-width content-height width height)
   "Return preferred TITLE-FRAME width and height, assuming given content size and the
    suggested WIDTH and HEIGHT for the TITLE-FRAME."
-
   (multiple-value-bind (title-width title-height)
       (title-size title-frame)
-
     (values
       ;; width
       (max title-width content-width width)
-
       ;; height
       (max (+ title-height content-height) height))))
-
 
 (defun title-adjust (title-frame)
   "Rearrange title and content according to current size of TITLE-FRAME."
   (with-slots (width height) title-frame
     (let* ((content (title-content title-frame))
            (border-width (contact-border-width content)))
-
       ;; Determine dimensions of title string
       (multiple-value-bind (title-width title-height) (title-size title-frame)
         (declare (ignore title-width))
-
         (let ((approved-x      0)
               (approved-y      title-height)
               (approved-width  (- width border-width border-width))
               (approved-height (- height title-height border-width border-width)))
-
           ;; Reposition content
           (with-state (content)
             (when (not (and (= (contact-x content) approved-x)
                             (= (contact-y content) approved-y)))
               (move content approved-x approved-y))
-
             (when (not (and (= (contact-width content) approved-width)
                             (= (contact-height content) approved-height)))
               (resize content approved-width approved-height border-width)))
-
           ;; Redisplay title
           (when (realized-p title-frame)
             (clear-area title-frame :exposures-p t)))))))
-
 
 (defun title-size (title-frame)
   "Return the width and height of the title string of the TITLE-FRAME."
@@ -309,7 +281,6 @@
                           :foreground background
                           :background foreground)
         (draw-image-glyphs title-frame gc title-x title-y text)))))
-
 
 ;;; Column
 
@@ -419,7 +390,6 @@
           (if height (max height preferred-height) preferred-height)
           (or border-width (slot-value column 'border-width))))))
 
-
 (defun column-preferred-size (column item-width item-height)
   "Return the preferred width and height for COLUMN, assuming the given
 ITEM-WIDTH and ITEM-HEIGHT."
@@ -429,7 +399,6 @@ ITEM-WIDTH and ITEM-HEIGHT."
         (+ item-width preferred-margin preferred-margin)
         (+ (* (length children) (+ item-height preferred-margin))
            preferred-margin)))))
-
 
 (defun column-item-size (column)
   "Return the maximum preferred width and height of all COLUMN children."
@@ -441,7 +410,6 @@ ITEM-WIDTH and ITEM-HEIGHT."
           (setf item-width  (max item-width  (+ child-width child-bw child-bw))
                 item-height (max item-height (+ child-height child-bw child-bw)))))
       (values item-width item-height))))
-
 
 (defun column-adjust (column &optional item-width item-height)
   "Rearrange COLUMN items according to current COLUMN size. If given, ITEM-WIDTH
@@ -490,40 +458,32 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
 (defmethod display ((button button) &optional x y width height &key)
   (declare (ignore x y width height))
-
   (with-slots
     (font label foreground (button-width width) (button-height height))
     button
-
     ;; Get metrics for label string
     (multiple-value-bind (label-width ascent descent left right font-ascent font-descent)
-        (text-extents font label)
+        (xlib:text-extents font label)
       (declare (ignore ascent descent left right))
-
       ;; Center label in button
       (let ((label-x (round (- button-width label-width) 2))
             (label-y (+ (round (- button-height font-ascent font-descent) 2)
                         font-ascent)))
-
         ;; Use an appropriate graphics context from the cache
         (using-gcontext (gc :drawable   button
                             :font       font
                             :foreground foreground)
           (draw-glyphs button gc label-x label-y label))))))
 
-
 (defmethod preferred-size ((button button) &key width height border-width)
   (with-slots (font label (bw border-width)) button
-
     ;; Get metrics for label string
     (multiple-value-bind (label-width ascent descent left right font-ascent font-descent)
-        (text-extents font label)
+        (xlib:text-extents font label)
       (declare (ignore ascent descent left right))
-
       (let* ((margin      2)
              (best-width  (+ label-width margin margin))
              (best-height (+  font-ascent font-descent margin margin)))
-
         ;; Return best geometry for this label
         (values
           (if width  (max width best-width)   best-width)
@@ -531,8 +491,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
           (or border-width bw))))))
 
 
-
-;;                                   Actions
+;; Actions
 
 (defmethod button-select ((button button))
   (apply-callback button :select))
@@ -542,7 +501,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
     (setf (window-border button) (if on-p foreground background))))
 
 
-;;                             Event translations
+;; Event translations
 
 (defevent button :button-press button-select)
 (defevent button :enter-notify (button-set-highlight t))
@@ -554,8 +513,8 @@ ITEM-WIDTH and ITEM-HEIGHT."
 (defun just-say-lisp (host &optional (font-name "fixed"))
   (let* ((display (open-contact-display 'just-say-lisp :host host))
          (screen (contact-screen (display-root display)))
-         (fg-color (screen-black-pixel screen))
-         (bg-color (screen-white-pixel screen))
+         (fg-color (xlib:screen-black-pixel screen))
+         (bg-color (xlib:screen-white-pixel screen))
          ;; Create menu
          (menu (make-contact
 		'menu
@@ -583,7 +542,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
                 (return)))))
       (close-display display))))
 
-(defun pick-one (host &optional (strings '("button1" "button2" "buttor3")))
+(defun pick-one (&optional host (strings '("button1" "button2" "buttor3")))
   (let* ((display (open-contact-display 'pick-one :host host))
          (menu (make-contact 'menu
 			     :parent display
@@ -608,134 +567,77 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
 (defun resource-menu (host menu-name item-defaults &rest buttons)
   (let*
-    ((display (open-contact-display 'resource-menu :host host))
-     (menu    (make-contact 'menu :parent display :name menu-name)))
+      ((display (open-contact-display 'resource-menu :host host))
+       (menu (make-contact 'menu :parent display :name menu-name)))
     (unwind-protect
-	(progn
-	  ;; Create menu items
-	  (dolist (label buttons)
-	    (make-contact 'button
-			  :parent   (menu-manager menu)
-			  :name     (intern (string label))
-			  :label    (format nil "~:(~a~)" label)
-			  :defaults item-defaults))
-	  ;; Set menu callback to return chosen item label
-	  (add-callback menu :select 'throw-menu-selection menu)
-	  ;; Display the menu so that first item is at x,y
-	  (initialize-geometry menu)
-	  (multiple-value-bind (x y) (query-pointer (contact-parent menu))
-	    (menu-present menu x y))
-	  ;; Event processing loop --- return selected string.
-	  (catch :menu-selection
-	    (loop (process-next-event display))))
+	 (progn
+	   ;; Create menu items
+	   (dolist (label buttons)
+	     (make-contact 'button
+			   :parent   (menu-manager menu)
+			   :name     (intern (string label))
+			   :label    (format nil "~:(~a~)" label)
+			   :defaults item-defaults))
+	   ;; Set menu callback to return chosen item label
+	   (add-callback menu :select 'throw-menu-selection menu)
+	   ;; Display the menu so that first item is at x,y
+	   (initialize-geometry menu)
+	   (multiple-value-bind (x y) (query-pointer (contact-parent menu))
+	     (menu-present menu x y))
+	   ;; Event processing loop --- return selected string.
+	   (catch :menu-selection
+	     (loop (process-next-event display))))
       (close-display display))))
-
 
 (defun beatlemenuia (host &optional defaults)
   (loop
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 1                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (define-resources
-      (* beatles title) "Who is your favorite Beatle?")
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 2                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (format t "~%Buttons are white-on-black ...")
-
-    (define-resources (* button foreground) :white
-                      (* button background) :black
-                      (* button border)     :white)
-
-    (format t " Choice is ~a"
-            (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
-
-    (undefine-resources (* button foreground) :white
-                        (* button background) :black
-                        (* button border) :white)
-    (unless (y-or-n-p "~%Continue?") (return))
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 3                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (format t "~%Use large Courier font everywhere ...")
-
-    (define-resources (resource-menu * font) "*courier-bold-r-normal--24*")
-
-    (format t " Choice is ~a"
-            (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
-
-    (undefine-resources (resource-menu * font) "*courier-bold-r-normal--24*")
-    (unless (y-or-n-p "~%Continue?") (return))
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 4                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (format t "~%Use gray background in menu ...")
-
-    (define-resources (* beatles * background) .8)
-
-    (format t " Choice is ~a"
-            (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
-
-    (undefine-resources (* beatles * background) .8)
-    (unless (y-or-n-p "~%Continue?") (return))
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 5                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (format t "~%Only John uses large Courier, Ringo uses gray background ...")
-
-    (define-resources (* John font)        "*courier-bold-r-normal--24*"
-                      (* Ringo background) "50%gray")
-
-    (format t " Choice is ~a"
-            (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
-
-    (undefine-resources (* John font)        "*courier-bold-r-normal--24*"
-                        (* Ringo background) "50%gray")
-    (unless (y-or-n-p "~%Continue?") (return))
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;                                 Example 6                                  |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-
-    (format t "~%Select only with :button-3 ...")
-
-    (define-resources (* button event-translations)
-                      '(((:button-press :button-3) button-select)
-                        ((:button-press :button-1) ignore-action)
-                        ((:button-press :button-2) ignore-action)))
-
-    (format t " Choice is ~a"
-            (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
-
-    (undefine-resources (* button event-translations)
-                      '(((:button-press :button-3) button-select)
-                        ((:button-press :button-1) ignore-action)
-                        ((:button-press :button-2) ignore-action)))
-    (unless (y-or-n-p "~%Continue?") (return))))
+     ;; Example 1
+     (define-resources
+       (* beatles title) "Who is your favorite Beatle?")
+     ;; Example 2
+     (format t "~%Buttons are white-on-black ...")
+     (define-resources (* button foreground) :white
+		       (* button background) :black
+		       (* button border)     :white)
+     (format t " Choice is ~a"
+	     (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
+     (undefine-resources (* button foreground) :white
+			 (* button background) :black
+			 (* button border) :white)
+     (unless (y-or-n-p "~%Continue?") (return))
+     ;; Example 3
+     (format t "~%Use large Courier font everywhere ...")
+     (define-resources (* resource-menu font) "*courier-bold-r-normal--24*")
+     (format t " Choice is ~a"
+	     (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
+     (undefine-resources (* resource-menu font) "*courier-bold-r-normal--24*")
+     (unless (y-or-n-p "~%Continue?") (return))
+     ;; Example 4
+     (format t "~%Use gray background in menu ...")
+     (define-resources (* beatles * background) .8)
+     (format t " Choice is ~a"
+	     (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
+     (undefine-resources (* beatles * background) .8)
+     (unless (y-or-n-p "~%Continue?") (return))
+     ;; Example 5
+     (format t "~%Only John uses large Courier, Ringo uses gray background ...")
+     (define-resources (* John font)        "*courier-bold-r-normal--24*"
+		       (* Ringo background) "50%gray")
+     (format t " Choice is ~a"
+	     (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
+     (undefine-resources (* John font)        "*courier-bold-r-normal--24*"
+			 (* Ringo background) "50%gray")
+     (unless (y-or-n-p "~%Continue?") (return))
+     ;; Example 6
+     (format t "~%Select only with :button-3 ...")
+     (define-resources (* button event-translations)
+		       '(((:button-press :button-3) button-select)
+			 ((:button-press :button-1) ignore-action)
+			 ((:button-press :button-2) ignore-action)))
+     (format t " Choice is ~a"
+	     (resource-menu host 'Beatles defaults 'John 'Paul 'George 'Ringo))
+     (undefine-resources (* button event-translations)
+			 '(((:button-press :button-3) button-select)
+			   ((:button-press :button-1) ignore-action)
+			   ((:button-press :button-2) ignore-action)))
+     (unless (y-or-n-p "~%Continue?") (return))))

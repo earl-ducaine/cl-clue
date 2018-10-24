@@ -18,10 +18,8 @@
 
 ;;; Created 3/03/88 by LGO
 
-(in-package "XLIB")
+(in-package :xlib)
 
-(export '(window-documentation
-	   change-window-documentation))
 
 (defun change-window-documentation (window string &key (mode :replace) format
 				    state select font translate)

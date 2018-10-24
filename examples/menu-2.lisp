@@ -24,8 +24,8 @@
 (defcontact menu (override-shell)
   ()
   (:resources
-    (font       :type     font)
-    (foreground :type     pixel)
+    (font       :type     xlib:font)
+    (foreground :type     xlib:pixel)
     (title      :type     string)
 
     (state      :initform :withdrawn))
@@ -160,7 +160,7 @@ item chosen. If no item is chosen, then nil is returned."
      :accessor title-foreground
      :initarg  :foreground
      :initform :black
-     :type     pixel)
+     :type     xlib:pixel)
 
    (text
      :accessor title-text
@@ -177,7 +177,7 @@ item chosen. If no item is chosen, then nil is returned."
     font
     foreground
     text
-    (event-mask :initform #.(make-event-mask :exposure)))
+    (event-mask :initform #.(xlib:make-event-mask :exposure)))
 
   (:documentation
     "A composite consisting of a text title and another contact."))
@@ -637,7 +637,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
      :accessor   button-foreground
      :initarg    :foreground
      :initform   :black
-     :type       pixel)
+     :type       xlib:pixel)
 
    (compress-exposures
      :allocation :class
@@ -669,7 +669,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
     ;; Get metrics for label string
     (multiple-value-bind (label-width ascent descent left right font-ascent font-descent)
-        (text-extents font label)
+        (xlib:text-extents font label)
       (declare (ignore ascent descent left right))
 
       ;; Center label in button
@@ -689,7 +689,7 @@ ITEM-WIDTH and ITEM-HEIGHT."
 
     ;; Get metrics for label string
     (multiple-value-bind (label-width ascent descent left right font-ascent font-descent)
-        (text-extents font label)
+        (xlib:text-extents font label)
       (declare (ignore ascent descent left right))
 
       (let* ((margin      2)
@@ -732,46 +732,46 @@ ITEM-WIDTH and ITEM-HEIGHT."
 ;;;----------------------------------------------------------------------------+
 
 
-(defun just-say-lisp (host &optional (font-name "fixed"))
-  (let* ((display   (open-contact-display 'just-say-lisp :host host))
-         (screen    (contact-screen (display-root display)))
-         (fg-color  (screen-black-pixel screen))
-         (bg-color  (screen-white-pixel screen))
+;; (defun just-say-lisp (host &optional (font-name "fixed"))
+;;   (let* ((display   (open-contact-display 'just-say-lisp :host host))
+;;          (screen    (contact-screen (display-root display)))
+;;          (fg-color  (xlib:screen-black-pixel screen))
+;;          (bg-color  (xlib:screen-white-pixel screen))
 
-         ;; Create menu
-         (menu      (make-contact
-                      'menu
-                      :parent     display
-                      :font       font-name
-                      :title      "Please pick your favorite language:"
-                      :foreground fg-color
-                      :background bg-color))
-         (menu-mgr  (menu-manager menu)))
+;;          ;; Create menu
+;;          (menu      (make-contact
+;;                       'menu
+;;                       :parent     display
+;;                       :font       font-name
+;;                       :title      "Please pick your favorite language:"
+;;                       :foreground fg-color
+;;                       :background bg-color))
+;;          (menu-mgr  (menu-manager menu)))
 
-    ;; Create menu items
-    (dolist (label '("Fortran" "APL" "Forth" "Lisp"))
-      (make-contact
-        'button
-        :parent     menu-mgr
-        :label      label
-	:font       font-name
-        :foreground fg-color))
+;;     ;; Create menu items
+;;     (dolist (label '("Fortran" "APL" "Forth" "Lisp"))
+;;       (make-contact
+;;         'button
+;;         :parent     menu-mgr
+;;         :label      label
+;; 	:font       font-name
+;;         :foreground fg-color))
 
-    ;; Bedevil the user until he picks a nice programming language
-    (unwind-protect
-        (loop
-          ;; Pop up menu at current pointer position
-          (multiple-value-bind (x y) (query-pointer (contact-parent menu))
-            (let ((choice (menu-choose menu x y)))
-              (when (string-equal "Lisp" choice)
-                (return)))))
+;;     ;; Bedevil the user until he picks a nice programming language
+;;     (unwind-protect
+;;         (loop
+;;           ;; Pop up menu at current pointer position
+;;           (multiple-value-bind (x y) (query-pointer (contact-parent menu))
+;;             (let ((choice (menu-choose menu x y)))
+;;               (when (string-equal "Lisp" choice)
+;;                 (return)))))
 
-      (close-display display))))
+;;       (close-display display))))
 
 
 (defun pick-one (host &rest strings)
-  (let* ((display  (open-contact-display 'pick-one :host host))
-         (menu     (make-contact 'menu :parent display :title "Pick one:")))
+  (let* ((display (open-contact-display 'pick-one :host host))
+         (menu (make-contact 'menu :parent display :title "Pick one:")))
 
     ;; Create menu items
     (dolist (string strings)

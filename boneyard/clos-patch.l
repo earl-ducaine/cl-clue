@@ -41,10 +41,10 @@
 
 	((find-package 'pcl)
 	 (in-package "XLIB" :use '("PCL")))
-	
+
 	((find-package 'cluei) ;; must be using clos-kludge
 	 (in-package "CLUEI"))
-	
+
 	(t
 	 (error "Can't find a CLOS"))))
 
@@ -67,7 +67,7 @@
 ;; Nuke defstruct info from drawable window and pixmap
 (eval-when (compile load eval)
   (dolist (symbol '( drawable drawable-id drawable-display drawable-plist make-drawable drawable-p
-		     window window-id window-display window-plist make-window window-p
+		     window xlib:window-id window-display xlib:window-plist make-window window-p
 		     pixmap pixmap-id pixmap-display pixmap-plist make-pixmap pixmap-p))
     (setf (symbol-plist symbol) nil)
     (fmakunbound symbol)))
@@ -84,12 +84,12 @@
 	    :initform 0
 	    :accessor drawable-id
 	    :initarg  :id)
-   
+
    (display :type     (or null display)
 	    :initform nil
 	    :accessor drawable-display
 	    :initarg  :display)
-   
+
    (plist   :type     list
 	    :initform nil
 	    :accessor drawable-plist
@@ -114,17 +114,17 @@
 (defclass window (drawable)
   ((id      :type     resource-id
 	    :initform 0
-	    :accessor window-id
+	    :accessor xlib:window-id
 	    :initarg  :id)
-   
+
    (display :type     (or null display)
 	    :initform nil
 	    :accessor window-display
 	    :initarg  :display)
-   
+
    (plist   :type     list
 	    :initform nil
-	    :accessor window-plist
+	    :accessor xlib:window-plist
 	    :initarg  :plist))		; Extension hook
 
   (:documentation "The class of CLX window objects."))
@@ -149,12 +149,12 @@
 	    :initform 0
 	    :accessor pixmap-id
 	    :initarg  :id)
-   
+
    (display :type     (or null display)
 	    :initform nil
 	    :accessor pixmap-display
 	    :initarg  :display)
-   
+
    (plist   :type     list
 	    :initform nil
 	    :accessor pixmap-plist

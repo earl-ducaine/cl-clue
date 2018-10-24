@@ -16,9 +16,7 @@
 ;;; express or implied warranty.
 ;;;
 
-
-
-(in-package "XLIB")
+(in-package :xlib)
 
 ;;;----------------------------------------------------------------------------+
 ;;;                                                                            |
@@ -45,9 +43,9 @@
   ;; defaults are.  Width and height are the inside size, excluding border.
   (declare (type window parent) ; required
 	   (type (or null window) window)
-	   (type int16 x y) ;required
-	   (type card16 width height) ;required
-	   (type card16 depth border-width)
+	   (type xlib:int16 x y) ;required
+	   (type xlib:card16 width height) ;required
+	   (type xlib:card16 depth border-width)
 	   (type (member :copy :input-output :input-only) class)
 	   (type (or (member :copy) visual-info resource-id) visual)
 	   (type (or null (member :none :parent-relative) pixel pixmap) background)
@@ -72,7 +70,7 @@
 	     (type resource-id wid)
 	     (type (or null resource-id) back-pixmap border-pixmap)
 	     (type (or null pixel) back-pixel border-pixel))
-    (setf (window-id window) wid)
+    (setf (xlib:window-id window) wid)
     (case background
       ((nil) nil)
       (:none (setq back-pixmap 0))
@@ -104,7 +102,7 @@
       (resource-id wid)
       (window parent)
       (int16 x y)
-      (card16 width height border-width)
+      (xlib:card16 width height border-width)
       ((member16 :copy :input-output :input-only) class)
       (resource-id (cond ((eq visual :copy)
 			  0)
@@ -122,48 +120,3 @@
 	    ((or (member :copy) colormap) colormap)
 	    ((or (member :none) cursor) cursor)))
     window))
-
-
-
-;;;----------------------------------------------------------------------------+
-;;;                                                                            |
-;;;  Define stubs for wm-hints/wm-size-hints accessors needed for full ICCCM   |
-;;;  support. Unnecessary with R4 CLX but needed when using R3 CLX.            |
-;;;                                                                            |
-;;;----------------------------------------------------------------------------+
-  
-(unless (find-symbol "WM-SIZE-HINTS-BASE-HEIGHT" 'xlib)
-  (defun wm-size-hints-base-height (hints)
-    (declare (ignore hints))
-    nil)
-  (export 'wm-size-hints-base-height 'xlib))
-
-(unless (find-symbol "WM-SIZE-HINTS-BASE-HEIGHT" 'xlib)
-  (defsetf wm-size-hints-base-height (hints) (value)
-    (declare (ignore hints))
-    `,value)
-  (export 'wm-size-hints-base-height 'xlib))
- 
-(unless (find-symbol "WM-SIZE-HINTS-BASE-WIDTH" 'xlib)
-  (defun wm-size-hints-base-width (hints)
-    (declare (ignore hints))
-    nil)
-  (export 'wm-size-hints-base-width 'xlib))
-
-(unless (find-symbol "WM-SIZE-HINTS-BASE-WIDTH" 'xlib)
-  (defsetf wm-size-hints-base-width (hints) (value)
-    (declare (ignore hints))
-    `,value)
-  (export 'wm-size-hints-base-width 'xlib))
- 
-(unless (find-symbol "WM-SIZE-HINTS-GRAVITY" 'xlib)
-  (defun wm-size-hints-gravity (hints)
-    (declare (ignore hints))
-    nil)
-  (export 'wm-size-hints-gravity 'xlib))
-
-(unless (find-symbol "WM-SIZE-HINTS-GRAVITY" 'xlib)
-  (defsetf wm-size-hints-gravity (hints) (value)
-    (declare (ignore hints))
-    `,value)
-  (export 'wm-size-hints-gravity 'xlib))

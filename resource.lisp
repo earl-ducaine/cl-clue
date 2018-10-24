@@ -16,19 +16,10 @@
 ;;; express or implied warranty.
 ;;;
 
-(in-package "CLUEI")
+(in-package :cluei)
 
-(export '(*database*
-	   convert
-	   define-resources
-	   undefine-resources
-	   ))
 
-(export '(default-resources ;; Debug aids
-	   class-resources
-	   describe-resource))
-
-(defvar *database* (make-resource-database))
+(defvar *database* (xlib:make-resource-database))
 
 (defun describe-resource (name &optional (database *database*) (max-levels 32))
   "Describe the entries for NAME in DATA-BASE"
@@ -115,7 +106,7 @@
   ;; full-name Specifies the name of this contact (may be overrid-
   ;;	   den by the arglist).
   ;; full-class Specifies the class of this contact.
-  (do* ((table (get-search-table *database* full-name full-class))
+  (do* ((table (xlib:get-search-table *database* full-name full-class))
 	(resources resources (cdr resources))
 	(resource (caar resources) (caar resources))
 	(value-type nil)
@@ -130,7 +121,7 @@
 		(setq arg carg)
 		(error "The ~s initialization is ~s which isn't type ~s"
 		       resource arg value-type))))
-	(let ((value (get-search-resource table resource (getf (cdar resources) :class resource)))
+	(let ((value (xlib:get-search-resource table resource (getf (cdar resources) :class resource)))
 	      (db nil))
 	  (if value
 	      ;; Resource in the database
@@ -162,7 +153,7 @@
 (defun get-clue-resource-internal (contact name class)
   (let ((initialization (slot-value (the contact contact) 'initialization)))
     (or (getf initialization name)
-	(get-search-resource (second initialization) name (or class name)))))
+	(xlib:get-search-resource (second initialization) name (or class name)))))
 
 ;; The default method
 (defmethod convert (contact value (type t))
@@ -175,14 +166,11 @@
 	   (let ((result (convert contact value typ)))
 	     (when result
 	       (return result))))))
-
     ((and (consp type) (eq (car type) 'member))		 ; MEMBER type
      (unless (keywordp value)
        (setq value (convert contact value 'keyword)))
      (and (member value (cdr type) :test #'eq) value))
-
     ((typep value type) value)				 ; If type works, use it!
-
     ((or (stringp value) (symbolp value))		 ; Last resort, try read-from-string
      (let ((value (string value))
 	   (*read-base* 10.))
@@ -200,31 +188,26 @@
        (intern (string-upcase value) 'keyword)))
     (otherwise nil)))
 
-(defmethod convert (contact value (type (eql 'pixel)))
+(defmethod convert (contact value (type (eql 'xlib:pixel)))
   (typecase value
-
-    (stringable
+    (xlib:stringable
      (when (symbolp value) (setq value (symbol-name value)))
      (let ((screen (contact-screen contact)))
        (cond
 	 ((equalp value "WHITE")
-	  (screen-white-pixel screen))
-
+	  (xlib:screen-white-pixel screen))
 	 ((equalp value "BLACK")
-	  (screen-black-pixel screen))
-
+	  (xlib:screen-black-pixel screen))
 	 (t
 	  (let ((cache (getf (screen-plist screen) :color-cache)))
 	    ;; Pixel already found for this color name?
 	    (or
 	      ;; Yes, return cached pixel.
 	      (rest (assoc value cache :test #'equalp))
-
 	      ;; No, allocate pixel for color name.
 	      (let*
 		((color (convert contact value 'color))
 		 (pixel (when color (convert contact color 'pixel))))
-
 		(when pixel
 		  ;; Add pixel to color name cache.
 		  (setf (getf (screen-plist screen) :color-cache)
@@ -233,59 +216,54 @@
     (color
      (ignore-errors
        (alloc-color (screen-default-colormap (contact-screen contact)) value)))
-
     (pixel value)
     (otherwise nil)))
 
-(defmethod convert (contact value (type (eql 'color)))
+(defmethod convert (contact value (type (eql 'xlib:color)))
   (typecase value
-    (stringable
+    (xlib:stringable
      (ignore-errors
        (lookup-color (screen-default-colormap (contact-screen contact)) value)))
     (color value)
     (otherwise nil)))
 
-(defmethod convert (contact value (type (eql 'font)))
+(defmethod convert (contact value (type (eql 'xlib:font)))
   (typecase value
-    (stringable
+    (xlib:stringable
      (ignore-errors (open-font (contact-display contact) value)))
-    (font value)
+    (xlib:font value)
     (otherwise nil)))
 
-(defmethod convert (contact value (type (eql 'pixmap)))
+(defmethod convert (contact value (type (eql 'xlib:pixmap)))
   (flet
     ((find-pixmap (contact image)
        (let ((drawable (if (realized-p contact) contact (contact-root contact))))
 	 (cond
 	   ((= (image-depth image) (contact-depth contact))
 	    (contact-image-pixmap drawable image))
-
 	   ((= (image-depth image) 1)
 	    (contact-image-mask drawable image))))))
     (typecase value
-      (stringable
+      (xlib:stringable
        (let ((image (stringable-value value 'image)))
 	 (when image (find-pixmap contact image))))
-
       ((or (rational 0 1) (float 0.0 1.0))
        (let ((gray (svref '#(0%gray  6%gray  12%gray 25%gray 37%gray 50%gray
 			     62%gray 75%gray 88%gray 93%gray 100%gray)
 			  (round (* value 10)))))
 	 (and gray (boundp gray) (find-pixmap contact (symbol-value gray)))))
-
       (image     (find-pixmap contact value))
       (pixmap    value)
       (otherwise nil))))
 
-(defmethod convert (contact value (type (eql 'image)))
+(defmethod convert (contact value (type (eql 'xlib:image)))
   (declare (ignore contact))
   (typecase value
-    (stringable (stringable-value value 'image))
+    (xlib:stringable (stringable-value value 'image))
     (image      value)
     (otherwise  nil)))
 
 (defun stringable-value (stringable type)
-  (declare (values value symbol))
   (let ((symbol (if (symbolp stringable)
 		    stringable
 		    (let ((*package* (find-package "CLUE")))
@@ -295,11 +273,11 @@
 	(when (typep (symbol-value symbol) type) (symbol-value symbol))
 	symbol))))
 
-(defmethod convert (contact value (type (eql 'cursor)))
+(defmethod convert (contact value (type (eql 'xlib:cursor)))
   (typecase value
     (card8
      (contact-glyph-cursor contact value))
-    (stringable
+    (xlib:stringable
      (let ((value (stringable-value value '(or image card8))))
        (when value (convert contact value type))))
     (image
@@ -321,10 +299,10 @@
   (declare (ignore contact))
   value)
 
-(defmethod convert (contact value (type (eql 'stringable)))
+(defmethod convert (contact value (type (eql 'xlib:stringable)))
   (declare (ignore contact))
   (typecase value
-    (stringable value)
+    (xlib:stringable value)
     (otherwise
      (princ-to-string value))))
 
@@ -336,10 +314,10 @@
     (otherwise
      (princ-to-string value))))
 
-(defmethod convert (contact value (type (eql 'mask32)))
+(defmethod convert (contact value (type (eql 'xlib:mask32)))
   (declare (ignore contact))
   (typecase value
-    (mask32     value)
+    (xlib:mask32     value)
     (list       (ignore-errors (apply #'make-event-mask value)))
     (otherwise  nil)))
 
@@ -348,7 +326,7 @@
   `(progn ,@(do* ((name-values name-value-pairs (cddr name-values))
 		  (result nil))
 		 ((endp name-values) (nreverse result))
-	      (push `(add-resource *database* ',(first name-values) ,(second name-values)) result))))
+	      (push `(xlib:add-resource *database* ',(first name-values) ,(second name-values)) result))))
 
 (defmacro undefine-resources (&body name-value-pairs)
   "Sugar coating for xlib:delete-resource"

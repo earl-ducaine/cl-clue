@@ -129,5 +129,12 @@ subdirectories.
         structures of 2D graphical primitives.
 
 
+Notes on the new version:
+      - Running demos:
+      (in-package :clue-example)
+      (just-say-lisp nil)
+      (pick-one nil)
+
+
 New ASDF release: minor modernization (including tex docs), created an
 ASDF project.

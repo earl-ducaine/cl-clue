@@ -1,9 +1,8 @@
 ;;; -*- Mode:Lisp; Package:CLUEI; Syntax:COMMON-LISP; Base:10; Lowercase:T -*-
 
-;;;
-;;;			 TEXAS INSTRUMENTS INCORPORATED
-;;;				  P.O. BOX 149149
-;;;			       AUSTIN, TEXAS 78714-9149
+;;; Texas Instruments Incorporated
+;;; P.O. Box 149149
+;;; Austin, Texas 78714-9149
 ;;;
 ;;; Copyright (C)1987,1988,1989,1990 Texas Instruments Incorporated.
 ;;;
@@ -14,10 +13,10 @@
 ;;;
 ;;; Texas Instruments Incorporated provides this software "as is" without
 ;;; express or implied warranty.
-;;;
 
 
 (in-package :cluei)
+
 
 (pushnew :clue *features*)
 
@@ -36,74 +35,74 @@
 
 (defmacro display-root-list (display)
   "Returns a list of root contacts in the order given by xlib:open-display."
-  `(getf (display-plist ,display) 'root-list))
+  `(getf (xlib:display-plist ,display) 'root-list))
 
 (defun display-root (display &optional number)
   "Returns the root of the display specified by the screen NUMBER."
   (if number
       (nth number (display-root-list display))
-      (getf (display-plist display) 'default-root)))
+      (getf (xlib:display-plist display) 'default-root)))
 
 (defsetf display-root (display) (screen)
-  `(setf (getf (display-plist ,display) 'default-root) ,screen))
+  `(setf (getf (xlib:display-plist ,display) 'default-root) ,screen))
 
 (defmacro before-actions (display)
   "Returns the alist of functions to call before event processing with arguments."
-  `(the list (getf (display-plist ,display) 'event-before-handlers)))
+  `(the list (getf (xlib:display-plist ,display) 'event-before-handlers)))
 
 (defmacro timer-queue (display)
   "Returns the list of display timer structures."
-  `(the list (getf (display-plist ,display) 'timer-queue)))
+  `(the list (getf (xlib:display-plist ,display) 'timer-queue)))
 
 (defmacro display-keyboard-buffer (display)
   "Returns the buffer used for keyboard input by all stream contacts on DISPLAY."
-  `(getf (display-plist ,display) 'keyboard-buffer))
+  `(getf (xlib:display-plist ,display) 'keyboard-buffer))
 
 (defmacro display-modifier-translate (display)
   "Returns the translations used for keyboard input by all stream contacts in DISPLAY."
-  `(getf (display-plist ,display) 'modifier-translate))
+  `(getf (xlib:display-plist ,display) 'modifier-translate))
 
 (defmacro display-update-flag (display)
   "Returns the flag used to indicate when update-state has work to do."
-  `(getf (display-plist ,display) 'update-flag))
+  `(getf (xlib:display-plist ,display) 'update-flag))
 
 (defun display-mode-stack (display)
   "Returns the mode-stack of the DISPLAY. The current input mode of a
    contact-display is given by its mode-stack. The mode-stack is an
    alist containing entries of the form (contact mode-type
    restrict-action . args)."
-  (getf (display-plist display) 'mode-stack))
+  (getf (xlib:display-plist display) 'mode-stack))
 
 (defsetf display-mode-stack (display) (stack)
-  `(setf (getf (display-plist ,display) 'mode-stack) ,stack))
+  `(setf (getf (xlib:display-plist ,display) 'mode-stack) ,stack))
 
 (defun display-multipress-delay-limit (display)
   "Reject a multipress that occurs more than this many milliseconds after initial press event."
-  (getf (display-plist display) 'multipress-delay-limit))
+  (getf (xlib:display-plist display) 'multipress-delay-limit))
 
 (defsetf display-multipress-delay-limit (display) (msec)
-  `(setf (getf (display-plist ,display) 'multipress-delay-limit) ,msec))
+  `(setf (getf (xlib:display-plist ,display) 'multipress-delay-limit) ,msec))
 
 (defun display-multipress-verify-p (display)
   "When true, verify timeout of multipress events by requesting a timestamp."
-  (getf (display-plist display) 'multipress-verify-p))
+  (getf (xlib:display-plist display) 'multipress-verify-p))
 
 (defsetf display-multipress-verify-p (display) (flag)
-  `(setf (getf (display-plist ,display) 'multipress-verify-p) ,flag))
+  `(setf (getf (xlib:display-plist ,display) 'multipress-verify-p) ,flag))
 
 (defun display-name (display)
   "Returns the application resource name associated with the display."
-  (getf (display-plist display) 'resource-name))
+  (getf (xlib:display-plist display) 'resource-name))
 
 (defsetf display-name (display) (name)
-  `(setf (getf (display-plist ,display) 'resource-name) ,name))
+  `(setf (getf (xlib:display-plist ,display) 'resource-name) ,name))
 
 (defun display-class (display)
   "Returns the application resource class associated with the display."
-  (getf (display-plist display) 'resource-class))
+  (getf (xlib:display-plist display) 'resource-class))
 
 (defsetf display-class (display) (class)
-  `(setf (getf (display-plist ,display) 'resource-class) ,class))
+  `(setf (getf (xlib:display-plist ,display) 'resource-class) ,class))
 
 
 ;;; Clue applications call open-contact-display to connect to an x server.
@@ -132,12 +131,12 @@
   (let ((disp
 	 (cond
 	   ((and display host)
-	    (open-display  host
+	    (xlib:open-display  host
 			   :display display
 			   :authorization-name authorization-name
 			   :authorization-data authorization-data))
 	   (t
-	    (open-default-display))))
+	    (xlib:open-default-display))))
 	(display-class (or class application-name)))
     ;; Initialize resource name and class
     (setf (display-name disp)  application-name
@@ -145,7 +144,7 @@
     ;; Create a root contact for each screen of the display
     (let ((i 0)
 	  roots)
-      (dolist (screen (display-roots disp))
+      (dolist (screen (xlib:display-roots disp))
 	(let ((name (intern (format nil "SCREEN-~d" i) 'keyword)))
 	  (push (make-contact
 		 root-class
@@ -169,56 +168,58 @@
 	  (display-multipress-verify-p disp)    *default-multipress-verify-p*)
     disp))
 
+;; Note, inhereting the private interface (from a different package)
+;; is problematic.  Be wary of the fact that xlib:window has the
+;; following members: id display plist
 (defcontact basic-contact (xlib:window)
-  ((display            :initarg :display
-		       :reader contact-display)
-   (parent             :initarg :parent
-		       :reader contact-parent)	       ; setf defined below
-   (name               :type symbol
-		       :initarg :name
-		       :initform :unnamed
-		       :reader contact-name)
-   (callbacks          :type list
-		       :reader contact-callbacks
-		       :initform nil)
+  ((xlib:display :initarg :display
+		 :reader contact-display)
+   (parent :initarg :parent
+	   :reader contact-parent)	       ; setf defined below
+   (name :type symbol
+	 :initarg :name
+	 :initform :unnamed
+	 :reader contact-name)
+   (callbacks :type list
+	      :reader contact-callbacks
+	      :initform nil)
    (event-translations :type list
 		       :initform nil)
-   (event-mask         :type mask32
-		       :initform #.(make-event-mask :exposure)
-		       :reader   contact-event-mask)   ; setf defined below
-   (state              :initform :mapped
-		       :type (member :withdrawn :managed :mapped)
-		       :reader contact-state)	       ; setf defined below
-   (sensitive          :initform :on
-		       :type (member :off :on)
-		       :reader contact-sensitive)      ; setf defined below
-   (x                  :type int16
-		       :initform 0
-		       :reader contact-x)
-   (y                  :type int16
-		       :initform 0
-		       :reader contact-y)
-   (width              :type card16
-		       :initform 0
-		       :reader contact-width)
-   (height             :type card16
-		       :initform 0
-		       :reader contact-height)
-   (border-width       :type card16
-		       :initform 1
-		       :reader contact-border-width)
+   (event-mask :type xlib:mask32
+	       :initform #.(xlib:make-event-mask :exposure)
+	       :reader   contact-event-mask)   ; setf defined below
+   (state :initform :mapped
+	  :type (member :withdrawn :managed :mapped)
+	  :reader contact-state)	       ; setf defined below
+   (sensitive :initform :on
+	      :type (member :off :on)
+	      :reader contact-sensitive)      ; setf defined below
+   (x :type xlib:int16
+      :initform 0
+      :reader contact-x)
+   (y :type xlib:int16
+      :initform 0
+      :reader contact-y)
+   (width :type xlib:card16
+	  :initform 0
+	  :reader contact-width)
+   (height :type xlib:card16
+	   :initform 0
+	   :reader contact-height)
+   (border-width :type xlib:card16
+		 :initform 1
+		 :reader contact-border-width)
    ;; Class allocated slots
-   (compress-motion    :initform :on :type (member :off :on)
-		       :reader contact-compress-motion
-		       :allocation :class)
+   (compress-motion :initform :on :type (member :off :on)
+		    :reader contact-compress-motion
+		    :allocation :class)
    (compress-exposures :initform :off :type (member :off :on)
 		       :reader contact-compress-exposures
-		       :allocation :class
-		       ))
+		       :allocation :class))
   (:documentation "Basic contact using parent's window")
   (:resources
    ;; Selects screen when parent is a display
-   (screen :type (or null card8))
+   (screen :type (or null xlib:card8))
    name
    callbacks
    event-translations
@@ -232,27 +233,27 @@
    border-width))
 
 (defcontact contact (basic-contact)
-  ((background     :type     (or (member :none :parent-relative) pixel pixmap)
-		   :initform :parent-relative
-		   ;; setf defined below
-		   :reader   contact-background)
-   (depth          :type     card16
-		   :initform 0
-		   :reader contact-depth)
+  ((background :type (or (member :none :parent-relative) xlib:pixel xlib:pixmap)
+	       :initform :parent-relative
+	       ;; setf defined below
+	       :reader contact-background)
+   (depth :type xlib:card16
+	  :initform 0
+	  :reader contact-depth)
    ;; internal slot for window initialization and destruction
    (initialization :type (or (member :destroy) list)))
   (:documentation "Basic contact")
   (:resources
-   (documentation     :type (or list string))
+   (documentation :type (or list string))
    ;; Slots
    background
    depth
    ;; Window attributes for create-window
-   (backing-store     :type (or null (member :not-useful :when-mapped :always)))
-   (border            :type (or null (member :copy) pixel pixmap))
-   (cursor            :type (or null (member :none) cursor))
+   (backing-store :type (or null (member :not-useful :when-mapped :always)))
+   (border :type (or null (member :copy) xlib:pixel xlib:pixmap))
+   (cursor :type (or null (member :none) xlib:cursor))
    (override-redirect :type (or null (member :on :off)))
-   (save-under        :type (or null (member :on :off)))
+   (save-under :type (or null (member :on :off)))
    ;; These window attributes are NOT defined as resources, because it's not worth
    ;; the cost in initialization time.
    ;;    (backing-pixel :type (or null pixel))
@@ -277,10 +278,9 @@
 	     :initform nil
 	     :reader composite-shells))
   (:resources
-   (event-mask :initform #.(make-event-mask))
+   (event-mask :initform #.(xlib:make-event-mask))
    (focus-name :type symbol))
   (:documentation "A basic CLUE contact with children"))
-
 
 ;;; Utility functions
 
@@ -339,7 +339,7 @@
        (when (and (or (null name)  (eq name  (contact-name contact)))
 		  (or (null class) (eq class (class-name-of contact))))
 	 contact)))
-  (defmethod find-contact ((parent display) &key name class)
+  (defmethod find-contact ((parent xlib:display) &key name class)
     (some #'(lambda (contact) (find-contact contact :name name :class class))
 	  (display-root-list parent)))
   (defmethod find-contact ((parent contact) &key name class)
@@ -357,14 +357,14 @@
 
 (defun realized-p (contact)
   "Returns T when contact's window is created and not destroyed"
-  (plusp (window-id contact)))
+  (plusp (xlib:window-id contact)))
 
 (defun destroyed-p (contact)
   "Returns true when contact's window is (being) destroyed."
-  (getf (window-plist contact) :destroyed-p))
+  (getf (xlib:window-plist contact) :destroyed-p))
 
 (defsetf destroyed-p (contact) (boolean)
-  `(setf (getf (window-plist ,contact) :destroyed-p) ,boolean))
+  `(setf (getf (xlib:window-plist ,contact) :destroyed-p) ,boolean))
 
 (defun managed-p (contact)
   "Returns non-nil when contact is geometry managed by its parent"
@@ -396,7 +396,7 @@
 (defmethod (setf contact-sensitive) (value (self contact))
   (declare (type (member :off :on) value))
   (check-type value (member :off :on) ":ON or :OFF")
-  (with-slots (x y width height sensitive parent display) self
+  (with-slots (x y width height sensitive parent contact-display) self
     (let ((old sensitive))
       (setf sensitive value)
       ;; Redisplay when changing sensitive
@@ -405,7 +405,7 @@
 	;; Give up focus if insensitive
 	(when (and (eq :off value) (owns-focus-p self))
 	  ;; Send focus to parent.
-	  (set-input-focus display parent :parent)))))
+	  (set-input-focus contact-display parent :parent)))))
   value)
 
 (defun refresh (window &key (x 0) (y 0) width height)
@@ -423,12 +423,12 @@
     (destroy-window transient-window)))
 
 (defmethod owns-focus-p ((contact contact))
-  (with-slots (display) contact
-    (eq contact (input-focus display))))
+  (with-slots (xlib:display) contact
+    (eq contact (input-focus xlib:display))))
 
 (defmethod owns-focus-p ((composite composite))
-  (with-slots (display) composite
-    (let ((focus (input-focus display)))
+  (with-slots (xlib:display) composite
+    (let ((focus (input-focus xlib:display)))
       (and
        (typep focus 'basic-contact)
        (or (eq focus composite)
@@ -451,7 +451,7 @@
          (< y contact-height))))
 
 (defmethod (setf contact-event-mask) (mask (contact contact))
-  (let ((mask (convert contact mask 'mask32)))
+  (let ((mask (convert contact mask 'xlib:mask32)))
     (assert mask nil "~s is not an EVENT-MASK.")
     (when (realized-p contact)
       (setf (window-event-mask contact) mask))
@@ -473,7 +473,7 @@
 
 (defmacro contact-constraints (contact)
   "Return the list of constraint resource values for the CONTACT."
-  `(getf (window-plist ,contact) 'constraints))
+  `(getf (xlib:window-plist ,contact) 'constraints))
 
 (defmacro contact-constraint (contact name)
   "Return the value of the constraint resource NAME for the CONTACT."
@@ -527,51 +527,43 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
     (assert (and complete-name complete-class)
 	    nil "No parent specified for new ~a." class-name)
 
-    (get-search-table *database* complete-name complete-class)))
+    (xlib:get-search-table *database* complete-name complete-class)))
 
 (defmethod initialize-instance :after ((self basic-contact)
 				       &rest initargs
 				       &key resource-table defaults
 					 &allow-other-keys)
-  (with-slots (name display parent event-translations event-mask initialization callbacks) self
-
+  (with-slots (name xlib:display parent event-translations event-mask initialization callbacks) self
     ;; Initialize and save initial values for slot resources
     (setf initialization
 	  (initialize-resource-slots self resource-table defaults))
     ;; Copy initial callback list, because this is destructively modified by add/delete-callback.
     (setf callbacks (copy-tree callbacks))
-
     ;; Save initial values for non-slot resources
     (let ((options (copy-list initargs)))
       ;; Allow resource-table to be GC'd
       (remf options :resource-table)
       (setf initialization
 	    (nconc initialization options)))
-
     ;; Initialize and save initial values for constraint resources
     (when parent
       (setf initialization
 	    (nconc initialization
 		   (setf (contact-constraints self)
 			 (initialize-constraints parent initargs resource-table)))))
-
     ;; Initialize name to class name by default
     (when (eq name :unnamed)
       (setf name (class-name-of self)))
-
     ;; Parse event-translations
     (setf event-translations
 	  (mapcar #'(lambda (et) (parse-event-translation (first et) (rest et)))
 		  event-translations)
 	  event-mask
 	  (xlib::encode-event-mask event-mask))
-
     ;; Add to composition hierarchy
     (when parent ; root contacts don't have a parent
-      (setf display (contact-display parent))
+      (setf xlib:display (contact-display parent))
       (add-to-parent self))))
-
-
 
 (defmethod initialize-instance :after ((self contact) &rest initargs)
   (declare (type list initargs))
@@ -812,48 +804,47 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   (map-over-children
    contact
    #'(lambda (contact)
-       (xlib::deallocate-resource-id (window-display contact) (window-id contact) 'window)
+       (xlib::deallocate-resource-id (window-display contact) (xlib:window-id contact) 'window)
        #+(and ti (not clos))
        (setf (si:array-leader contact 1) 'destroyed-contact) ;; Debug hack to catch errors
        )))
-
-;;;-----------------------------------------------------------------------------
-;;; ROOT CONTACT
+
+;;; Root contact
 ;;;
 ;;; For each screen of the display there's a root contact.
 ;;; The root contact is used as the root parent contact for all the contacts
 ;;; on a screen
 
 (defcontact root (composite)
-  ((screen       :type     screen :initarg  :screen)
-   (x            :initform 0)
-   (y            :initform 0)
-   (width        :initform 0)			; actual value filled in by initialize-instance
-   (height       :initform 0)			; actual value filled in by initialize-instance
+  ((screen :type xlib:screen :initarg :screen)
+   (x :initform 0)
+   (y :initform 0)
+   ;; actual value filled in by initialize-instance
+   (width :initform 0)
+   ;; actual value filled in by initialize-instance
+   (height :initform 0)
    (border-width :initform 0)
-   (depth        :initform 0)
-   (background   :initform :none))
-
+   (depth :initform 0)
+   (background :initform :none))
   (:resources
    ;; Remove all inherited resources that cannot actually be changed by user
-   (background            :remove t)
-   (backing-store         :remove t)
-   (border                :remove t)
-   (border-width          :remove t)
-   (depth                 :remove t)
-   (documentation         :remove t)
-   (focus-name            :remove t)
-   (height                :remove t)
-   (name                  :remove t)
-   (override-redirect     :remove t)
-   (save-under            :remove t)
-   (sensitive             :remove t)
-   (screen                :remove t)
-   (state                 :remove t)
-   (width                 :remove t)
-   (x                     :remove t)
-   (y                     :remove t)))
-
+   (background :remove t)
+   (backing-store :remove t)
+   (border :remove t)
+   (border-width :remove t)
+   (depth :remove t)
+   (documentation :remove t)
+   (focus-name :remove t)
+   (height :remove t)
+   (name :remove t)
+   (override-redirect :remove t)
+   (save-under :remove t)
+   (sensitive :remove t)
+   (screen :remove t)
+   (state :remove t)
+   (width :remove t)
+   (x :remove t)
+   (y :remove t)))
 
 (defun contact-screen (contact)
   ;; Return the xlib:screen associated with CONTACT
@@ -969,7 +960,7 @@ If FROM and TO are on different screens, then nil is returned."
 
 (defmacro composite-changing-layout-p  (composite)
   "While true, calls to (CHANGE-LAYOUT COMPOSITE) are ignored."
-  `(getf (window-plist ,composite) :changing-layout-p))
+  `(getf (xlib:window-plist ,composite) :changing-layout-p))
 
 (defmacro while-changing-layout ((composite) &body body)
   "Postpone calls to (CHANGE-LAYOUT COMPOSITE) until BODY has been executed."

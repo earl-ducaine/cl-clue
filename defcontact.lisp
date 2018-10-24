@@ -137,7 +137,7 @@
     (unless (pop resource) (error "~a isn't a resource of the ~s class" resource-name class))
     (let ((class (getf resource :class))
 	  (init (getf resource :initform)))
-      `(or (get-search-resource ,resource-table ',name ',class) ,init))))
+      `(or (xlib:get-search-resource ,resource-table ',name ',class) ,init))))
 
 (defun convert-resource (class resource-name value resources parent)
   ;; Generate code to do type checking and conversion on value for resource-name of class
@@ -338,24 +338,19 @@
 	 (let ((options      (copy-list initargs))
 	       (app-defaults (getf initargs :defaults))
 	       (parent       (getf initargs :parent)))
-
 	   ;; "Use" app-defaults to avoid compiler warning when no non-slot resources exist.
 	   app-defaults
-
 	   ;; Convert parent arg, if necessary
-	   (when (display-p parent)
+	   (when (xlib:display-p parent)
 	     (setf options (list* :parent
 				  (setf parent (display-root parent (getf initargs :screen)))
 				  options)))
-
 	   ;; Build a resource table for fast resource lookup
 	   (let ((resource-table (get-contact-resource-table class parent initargs)))
-
 	     ;; Generate code to find resource values, convert to representation type,
 	     ;; and add to option list
 	     ,@code
 	     (list* :resource-table resource-table options)))))))
-
 
 (defun push-resource (name resources)
   "Generate code to find resource value, convert to representation type, and add to option list."
@@ -363,7 +358,7 @@
     (let ((type (getf resource :type)))
       `(let* ((initarg-p (getf initargs ,name))
 	      (value     (or  initarg-p
-			      (get-search-resource resource-table ,name ,(getf resource :class))
+			      (xlib:get-search-resource resource-table ,name ,(getf resource :class))
 			      (getf app-defaults ,name)
 			      ,(getf resource :initform)))
 	      (no-convert-p ,(if type `(and value (typep value ',type)) t)))
@@ -382,7 +377,7 @@
   (let ((constraint (rest (assoc name constraints))))
     (let ((type (getf constraint :type)))
       `(let* ((value     (or  (getf initargs ,name)
-			      (get-search-resource resource-table ,name ,(getf constraint :class))
+			      (xlib:get-search-resource resource-table ,name ,(getf constraint :class))
 			      (getf app-defaults ,name)
 			      ,(getf constraint :initform))))
 	 (when value
@@ -399,7 +394,7 @@
   (let ((resource (rest (assoc name resources))))
     (let ((type (getf resource :type)))
       `(let* ((value     (or  (slot-value instance ',slot)
-			      (get-search-resource resource-table ,name ,(getf resource :class))
+			      (xlib:get-search-resource resource-table ,name ,(getf resource :class))
 			      (getf app-defaults ,name)
 			      ,(getf resource :initform))))
 	 (when value

@@ -20,23 +20,23 @@
 
 ;;; Gcontexts                                      |
 
-(defmethod contact-depth ((drawable drawable))
+(defmethod contact-depth ((drawable xlib:drawable))
   (or (getf (drawable-plist drawable) 'depth)
       (setf (getf (drawable-plist drawable) 'depth)
 	    (drawable-depth drawable))))
 
-(defmethod contact-root ((drawable drawable))
+(defmethod contact-root ((drawable xlib:drawable))
   (or (getf (drawable-plist drawable) 'root)
       (setf (getf (drawable-plist drawable) 'root)
 	    (drawable-root drawable))))
 ;; We create a gcontext from a bogus window, which should be populated
 ;; with defaults of somekind.
-;; (create-gcontext :drawable (displ(open-default-display)
+;; (xlib:create-gcontext :drawable (displ(open-default-display)
 (let ((gcontext
-       (create-gcontext
-	:drawable (screen-root
-		   (display-default-screen
-		    (open-default-display))))))
+       (xlib:create-gcontext
+	:drawable (xlib:screen-root
+		   (xlib:display-default-screen
+		    (xlib:open-default-display))))))
   (defun default-gcontext (drawable default)
     "Return a gcontext with the same attributes as DEFAULT which can
      be used to search the gcontext cache for the DRAWABLE. The second
@@ -65,7 +65,7 @@
 					 ;; Actually create/delete an unnecessary default
 					 ;; gcontext to avoid knowledge of state vector
 					 ;; representation.
-					 (let ((default (create-gcontext :drawable drawable)))
+					 (let ((default (xlib:create-gcontext :drawable drawable)))
 					   (prog1
 					       (copy-seq (xlib::gcontext-local-state default))
 					     (free-gcontext default))))))
@@ -82,7 +82,7 @@
 			  &body body)
   "Perform body with gcontext bound to a gcontext containing the
    specified options, where options is a list of any initargs accepted
-   by create-gcontext. for those values not specified by options,
+   by xlib:create-gcontext. for those values not specified by options,
    gcontext will match the default gcontext."
   (assert drawable nil "Required DRAWABLE argument is missing or nil.")
   (setf options (copy-list options))
@@ -134,7 +134,7 @@
 	      ,lookup)
 	   `,lookup)))))
 
-(defconstant +gcontext-test-sequence+
+(defparameter *gcontext-test-sequence*
   (let ((state-indexes (append xlib::+gcontext-components+ '(:clip :dash))))
     (mapcar
      (lambda (key) (position key state-indexes))
@@ -187,7 +187,7 @@
 	     ;; Next gcontext matches?...
 	     (let ((test-state (xlib::gcontext-local-state gcontext)))
 	       (declare (type xlib::gcontext-state test-state))
-	       (dolist (i +gcontext-test-sequence+ t)
+	       (dolist (i *gcontext-test-sequence* t)
 		 (unless (equalp  (svref test-state i) (svref desired i))
 		   (return nil))))
 	     ;; ...and matching gcontext is at head of cache?
@@ -199,7 +199,7 @@
 	 ;; Return matching gcontext (or nil).
 	 gcontext))
       ;; Create new gcontext.
-      (let ((gcontext (apply #'create-gcontext :drawable drawable initargs)))
+      (let ((gcontext (apply #'xlib:create-gcontext :drawable drawable initargs)))
 	;; If initargs are given, then they specify the desired attributes
 	;; for the new gcontext. Otherwise, update local state in anticipation
 	;; of next force-gcontext-changes.
@@ -365,7 +365,7 @@
    FOREGROUND and BACKGROUND are xlib:color objects and default to black and white, respectively."
   (declare (type contact contact)
 	   (type (or pixmap image) image mask)
-	   (type int16 x y)
+	   (type xlib:int16 x y)
 	   (type (or null color) foreground background))
   (declare (values cursor))
 
